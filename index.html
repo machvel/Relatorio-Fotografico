@@ -217,6 +217,10 @@ const state = {
   loading: false
 };
 
+function phaseLabel(phase){
+  return phase === 'Durante' ? 'Durante a Atividade' : `${phase} da Atividade`;
+}
+
 function slugify(s){
   return (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
@@ -333,6 +337,12 @@ async function moveEntryToReport(sourceReportId, targetReportId, entry, newTask)
   data.task = newTask;
   await addEntry(targetReportId, data);
   await db.collection('reports').doc(sourceReportId).collection('entries').doc(key).delete();
+}
+
+async function moveTaskToReport(sourceReportId, targetReportId, entries, newTask){
+  for(const entry of entries){
+    await moveEntryToReport(sourceReportId, targetReportId, entry, newTask);
+  }
 }
 
 // ---------- Image handling ----------
@@ -527,7 +537,7 @@ async function buildPDFDoc(reportId){
           doc.addImage(entry.photo, 'JPEG', ix, blockTop, iw, ih);
 
           doc.setDrawColor(...blue); doc.setLineWidth(1);
-          const label = `${entry.phase} da Atividade`;
+          const label = phaseLabel(entry.phase);
           doc.setFont('helvetica','bold'); doc.setFontSize(13);
           const lw = doc.getTextWidth(label) + 40;
           const lx = (PW-lw)/2;
@@ -552,7 +562,7 @@ async function buildPDFDoc(reportId){
             doc.addImage(entry.photo, 'JPEG', ix, blockTop, iw, ih);
 
             doc.setDrawColor(...blue); doc.setLineWidth(1);
-            const label = `${entry.phase} da Atividade`;
+            const label = phaseLabel(entry.phase);
             doc.setFont('helvetica','bold'); doc.setFontSize(12);
             const lw = doc.getTextWidth(label) + 32;
             const lx = cx + (colW-lw)/2;
@@ -628,6 +638,7 @@ function render(){
   if(state.screen === 'report') return renderReport();
   if(state.screen === 'add') return renderAdd();
   if(state.screen === 'edit-entry') return renderEditEntry();
+  if(state.screen === 'move-task-report') return renderMoveTaskReport();
 }
 
 function renderHome(){
@@ -816,7 +827,7 @@ function renderReportBody(){
       <div class="entry-row">
         <img src="${entry.photo}">
         <div class="er-info">
-          <span class="phase-tag phase-${entry.phase}">${entry.phase} da Atividade</span>
+          <span class="phase-tag phase-${entry.phase}">${phaseLabel(entry.phase)}</span>
           <div class="er-meta">${entry.author ? escapeHtml(entry.author) : 'Sem nome'} · ${new Date(entry.ts).toLocaleDateString('pt-BR')}</div>
         </div>
         <span style="flex:none;display:flex;flex-direction:column;">
@@ -833,6 +844,7 @@ function renderReportBody(){
         <span style="flex:none;">
           <button class="btn-sm btn-ghost move-task" data-task="${encodeURIComponent(task)}" data-dir="up" ${idx===0?'disabled':''} style="padding:4px 9px;margin-left:4px;">↑</button>
           <button class="btn-sm btn-ghost move-task" data-task="${encodeURIComponent(task)}" data-dir="down" ${idx===taskOrder.length-1?'disabled':''} style="padding:4px 9px;margin-left:4px;">↓</button>
+          <button class="btn-sm btn-ghost move-task-report" data-task="${encodeURIComponent(task)}" style="padding:4px 9px;margin-left:4px;">⇢ relatório</button>
         </span>
       </div>
       ${rows}
@@ -881,6 +893,15 @@ function renderReportBody(){
       const task = decodeURIComponent(btn.getAttribute('data-task'));
       const dir = btn.getAttribute('data-dir');
       await moveEntry(dir, key, task);
+    };
+  });
+
+  main.querySelectorAll('.move-task-report').forEach(btn=>{
+    btn.onclick = ()=>{
+      const task = decodeURIComponent(btn.getAttribute('data-task'));
+      state.movingTask = task;
+      state.screen = 'move-task-report';
+      render();
     };
   });
 }
@@ -1114,6 +1135,74 @@ function renderEditEntry(){
       }catch(e){
         console.error(e); showToast('Erro ao mover a foto.');
         btn.innerHTML = 'Mover foto para este relatório'; btn.disabled = false;
+      }
+    };
+  });
+}
+
+function renderMoveTaskReport(){
+  const task = state.movingTask;
+  const taskEntries = state.currentEntries.filter(e=>e.task===task);
+  app.innerHTML = `
+    <header class="topbar">
+      <button class="back" id="btn-back">←</button>
+      <div>
+        <h1>Mover tarefa</h1>
+        <div class="sub">${escapeHtml(task)}</div>
+      </div>
+    </header>
+    <main>
+      <div class="card">
+        <h2>${taskEntries.length} foto${taskEntries.length!==1?'s':''} nesta tarefa</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+          ${taskEntries.map(e=>`<img src="${e.photo}" style="width:52px;height:52px;object-fit:cover;border-radius:6px;">`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <h2>Mover para outro relatório</h2>
+        <div id="move-report-area"><div class="hint">Carregando relatórios…</div></div>
+      </div>
+    </main>
+  `;
+  document.getElementById('btn-back').onclick = ()=>{ state.movingTask=null; state.screen='report'; render(); renderReportBody(); };
+
+  const moveArea = document.getElementById('move-report-area');
+  fetchReports().then(reports=>{
+    const others = reports.filter(r=>r.id !== state.currentReportId);
+    if(others.length === 0){
+      moveArea.innerHTML = '<div class="hint">Não há outros relatórios criados ainda.</div>';
+      return;
+    }
+    moveArea.innerHTML = `
+      <label>Relatório de destino</label>
+      <select id="f-target-report">
+        ${others.map(r=>`<option value="${r.id}">${escapeHtml(r.header.embarcacao)} — ${escapeHtml(r.header.turma)} (${escapeHtml(r.header.periodo||'')})</option>`).join('')}
+      </select>
+      <label>Tarefa no relatório de destino</label>
+      <input type="text" id="f-target-task" value="${escapeHtml(task)}">
+      <div class="hint">Se já existir uma tarefa com esse nome no outro relatório, as fotos entram no mesmo grupo.</div>
+      <div class="btn-row">
+        <button class="btn btn-danger-ghost" id="btn-move-report">Mover ${taskEntries.length} foto${taskEntries.length!==1?'s':''} para este relatório</button>
+      </div>
+    `;
+    document.getElementById('btn-move-report').onclick = async ()=>{
+      const targetId = document.getElementById('f-target-report').value;
+      const targetTask = document.getElementById('f-target-task').value.trim();
+      if(!targetTask){ showToast('Informe a tarefa no relatório de destino.'); return; }
+      if(!confirm(`Mover todas as ${taskEntries.length} fotos desta tarefa para o outro relatório? Elas sairão deste relatório.`)) return;
+      const btn = document.getElementById('btn-move-report');
+      btn.innerHTML = '<span class="spinner"></span> Movendo…'; btn.disabled = true;
+      try{
+        await moveTaskToReport(state.currentReportId, targetId, taskEntries, targetTask);
+        state.currentEntries = await fetchEntries(state.currentReportId);
+        showToast('Tarefa movida para o outro relatório!');
+        state.movingTask = null;
+        state.screen = 'report';
+        render();
+        renderReportBody();
+      }catch(e){
+        console.error(e); showToast('Erro ao mover a tarefa.');
+        btn.innerHTML = `Mover ${taskEntries.length} fotos para este relatório`; btn.disabled = false;
       }
     };
   });
