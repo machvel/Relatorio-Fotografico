@@ -483,9 +483,9 @@ async function buildPDFDoc(reportId){
     const listW = 620;
     const listX = (PW-listW)/2;
     const maxY = PH - 40;
-    doc.setFont('helvetica','normal'); doc.setFontSize(15);
     let ty = 130;
     taskOrder.forEach((task)=>{
+      doc.setFont('helvetica','bold'); doc.setFontSize(15);
       const lines = doc.splitTextToSize(task || '(sem título)', listW-24);
       const blockH = lines.length*20 + 12;
       if(ty + blockH > maxY){
@@ -494,6 +494,7 @@ async function buildPDFDoc(reportId){
         drawTaskListPageHeader(true);
         ty = 130;
       }
+      doc.setFont('helvetica','bold'); doc.setFontSize(15);
       doc.setTextColor(...blue);
       doc.text('•', listX, ty);
       doc.setTextColor(20,20,20);
