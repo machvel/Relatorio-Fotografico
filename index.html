@@ -408,16 +408,18 @@ async function updateEntry(reportId, key, data){
   await db.collection('reports').doc(reportId).collection('entries').doc(key).update(data);
 }
 
-async function moveEntryToReport(sourceReportId, targetReportId, entry, newTask){
+async function moveEntryToReport(sourceReportId, targetReportId, entry, newTask, keepOriginal){
   const { key, ...data } = entry;
   data.task = newTask;
   await addEntry(targetReportId, data);
-  await db.collection('reports').doc(sourceReportId).collection('entries').doc(key).delete();
+  if(!keepOriginal){
+    await db.collection('reports').doc(sourceReportId).collection('entries').doc(key).delete();
+  }
 }
 
-async function moveTaskToReport(sourceReportId, targetReportId, entries, newTask){
+async function moveTaskToReport(sourceReportId, targetReportId, entries, newTask, keepOriginal){
   for(const entry of entries){
-    await moveEntryToReport(sourceReportId, targetReportId, entry, newTask);
+    await moveEntryToReport(sourceReportId, targetReportId, entry, newTask, keepOriginal);
   }
 }
 
@@ -1307,28 +1309,46 @@ function renderEditEntry(){
       <label>Tarefa no relatório de destino</label>
       <input type="text" id="f-target-task" value="${escapeHtml(entry.task)}">
       <div class="hint">Se já existir uma tarefa com esse nome no outro relatório, a foto entra no mesmo grupo.</div>
+      <label>Ação</label>
+      <div class="phase-choice" id="action-choice">
+        <button type="button" class="phase-btn active-Durante" data-action="move">Mover</button>
+        <button type="button" class="phase-btn" data-action="copy">Copiar</button>
+      </div>
+      <div class="hint">"Mover" tira a foto daqui. "Copiar" mantém aqui e também coloca no outro relatório.</div>
       <div class="btn-row">
         <button class="btn btn-danger-ghost" id="btn-move-report">Mover foto para este relatório</button>
       </div>
     `;
+    let action = 'move';
+    document.querySelectorAll('#action-choice .phase-btn').forEach(btn=>{
+      btn.onclick = ()=>{
+        action = btn.getAttribute('data-action');
+        document.querySelectorAll('#action-choice .phase-btn').forEach(b=>b.className='phase-btn');
+        btn.className = 'phase-btn active-Durante';
+        document.getElementById('btn-move-report').textContent = action === 'copy' ? 'Copiar foto para este relatório' : 'Mover foto para este relatório';
+      };
+    });
     document.getElementById('btn-move-report').onclick = async ()=>{
       const targetId = document.getElementById('f-target-report').value;
       const targetTask = document.getElementById('f-target-task').value.trim();
       if(!targetTask){ showToast('Informe a tarefa no relatório de destino.'); return; }
-      if(!confirm('Mover esta foto para o outro relatório? Ela sairá deste relatório.')) return;
+      const verb = action === 'copy' ? 'Copiar' : 'Mover';
+      const warning = action === 'copy' ? '' : ' Ela sairá deste relatório.';
+      if(!confirm(`${verb} esta foto para o outro relatório?${warning}`)) return;
       const btn = document.getElementById('btn-move-report');
-      btn.innerHTML = '<span class="spinner"></span> Movendo…'; btn.disabled = true;
+      const originalLabel = action === 'copy' ? 'Copiar foto para este relatório' : 'Mover foto para este relatório';
+      btn.innerHTML = `<span class="spinner"></span> ${action === 'copy' ? 'Copiando' : 'Movendo'}…`; btn.disabled = true;
       try{
-        await moveEntryToReport(state.currentReportId, targetId, entry, targetTask);
+        await moveEntryToReport(state.currentReportId, targetId, entry, targetTask, action === 'copy');
         state.currentEntries = await fetchEntries(state.currentReportId);
-        showToast('Foto movida para o outro relatório!');
+        showToast(action === 'copy' ? 'Foto copiada para o outro relatório!' : 'Foto movida para o outro relatório!');
         state.editingEntry = null;
         state.screen = 'report';
         render();
         renderReportBody();
       }catch(e){
-        console.error(e); showToast('Erro ao mover a foto.');
-        btn.innerHTML = 'Mover foto para este relatório'; btn.disabled = false;
+        console.error(e); showToast(`Erro ao ${action === 'copy' ? 'copiar' : 'mover'} a foto.`);
+        btn.innerHTML = originalLabel; btn.disabled = false;
       }
     };
   });
@@ -1375,28 +1395,47 @@ function renderMoveTaskReport(){
       <label>Tarefa no relatório de destino</label>
       <input type="text" id="f-target-task" value="${escapeHtml(task)}">
       <div class="hint">Se já existir uma tarefa com esse nome no outro relatório, as fotos entram no mesmo grupo.</div>
+      <label>Ação</label>
+      <div class="phase-choice" id="action-choice">
+        <button type="button" class="phase-btn active-Durante" data-action="move">Mover</button>
+        <button type="button" class="phase-btn" data-action="copy">Copiar</button>
+      </div>
+      <div class="hint">"Mover" tira as fotos daqui. "Copiar" mantém aqui e também coloca no outro relatório.</div>
       <div class="btn-row">
         <button class="btn btn-danger-ghost" id="btn-move-report">Mover ${taskEntries.length} foto${taskEntries.length!==1?'s':''} para este relatório</button>
       </div>
     `;
+    let action = 'move';
+    document.querySelectorAll('#action-choice .phase-btn').forEach(btn=>{
+      btn.onclick = ()=>{
+        action = btn.getAttribute('data-action');
+        document.querySelectorAll('#action-choice .phase-btn').forEach(b=>b.className='phase-btn');
+        btn.className = 'phase-btn active-Durante';
+        const verbLabel = action === 'copy' ? 'Copiar' : 'Mover';
+        document.getElementById('btn-move-report').textContent = `${verbLabel} ${taskEntries.length} foto${taskEntries.length!==1?'s':''} para este relatório`;
+      };
+    });
     document.getElementById('btn-move-report').onclick = async ()=>{
       const targetId = document.getElementById('f-target-report').value;
       const targetTask = document.getElementById('f-target-task').value.trim();
       if(!targetTask){ showToast('Informe a tarefa no relatório de destino.'); return; }
-      if(!confirm(`Mover todas as ${taskEntries.length} fotos desta tarefa para o outro relatório? Elas sairão deste relatório.`)) return;
+      const verb = action === 'copy' ? 'Copiar' : 'Mover';
+      const warning = action === 'copy' ? '' : ' Elas sairão deste relatório.';
+      if(!confirm(`${verb} todas as ${taskEntries.length} fotos desta tarefa para o outro relatório?${warning}`)) return;
       const btn = document.getElementById('btn-move-report');
-      btn.innerHTML = '<span class="spinner"></span> Movendo…'; btn.disabled = true;
+      const originalLabel = `${verb} ${taskEntries.length} foto${taskEntries.length!==1?'s':''} para este relatório`;
+      btn.innerHTML = `<span class="spinner"></span> ${action === 'copy' ? 'Copiando' : 'Movendo'}…`; btn.disabled = true;
       try{
-        await moveTaskToReport(state.currentReportId, targetId, taskEntries, targetTask);
+        await moveTaskToReport(state.currentReportId, targetId, taskEntries, targetTask, action === 'copy');
         state.currentEntries = await fetchEntries(state.currentReportId);
-        showToast('Tarefa movida para o outro relatório!');
+        showToast(action === 'copy' ? 'Tarefa copiada para o outro relatório!' : 'Tarefa movida para o outro relatório!');
         state.movingTask = null;
         state.screen = 'report';
         render();
         renderReportBody();
       }catch(e){
-        console.error(e); showToast('Erro ao mover a tarefa.');
-        btn.innerHTML = `Mover ${taskEntries.length} fotos para este relatório`; btn.disabled = false;
+        console.error(e); showToast(`Erro ao ${action === 'copy' ? 'copiar' : 'mover'} a tarefa.`);
+        btn.innerHTML = originalLabel; btn.disabled = false;
       }
     };
   });
