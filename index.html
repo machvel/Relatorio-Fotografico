@@ -303,6 +303,13 @@ async function createReport(data){
   return id;
 }
 
+async function deleteReport(id){
+  const entriesSnap = await db.collection('reports').doc(id).collection('entries').get();
+  const batchDeletes = entriesSnap.docs.map(d => d.ref.delete());
+  await Promise.all(batchDeletes);
+  await db.collection('reports').doc(id).delete();
+}
+
 async function fetchHeader(id){
   const docSnap = await db.collection('reports').doc(id).get();
   return docSnap.exists ? docSnap.data() : null;
@@ -658,23 +665,73 @@ function renderHome(){
   document.getElementById('btn-new').onclick = ()=>{ state.screen='new'; render(); };
   const main = document.getElementById('main');
   main.innerHTML = `<div class="empty"><div class="big">⏳</div>Carregando relatórios…</div>`;
+
+  const setorOrder = ['Máquinas', 'Passadiço', 'Embarcação'];
+
+  function reportItemHtml(r){
+    return `
+      <div class="report-item" data-id="${r.id}">
+        <div class="ri-left">
+          <div class="ri-title">${escapeHtml(r.header.embarcacao)} — ${escapeHtml(r.header.turma)}</div>
+          <div class="ri-sub">${escapeHtml(r.header.periodo||'')}</div>
+        </div>
+        <div class="ri-count">${r.count} 📷</div>
+        <button class="ri-del" data-id="${r.id}" style="background:none;border:none;color:var(--danger);font-size:18px;padding:6px;cursor:pointer;flex:none;">✕</button>
+      </div>
+    `;
+  }
+
   fetchReports().then(reports=>{
     state.reports = reports;
     if(reports.length === 0){
       main.innerHTML = `<div class="empty"><div class="big">📷</div>Nenhum relatório ainda.<br>Toque em "Novo relatório semanal" para começar.</div>`;
       return;
     }
-    main.innerHTML = reports.map(r=>`
-      <div class="report-item" data-id="${r.id}">
-        <div class="ri-left">
-          <div class="ri-title">${escapeHtml(r.header.embarcacao)} — ${escapeHtml(r.header.turma)}</div>
-          <div class="ri-sub">${escapeHtml(r.header.periodo||'')} · ${escapeHtml(r.header.setor||'')}</div>
-        </div>
-        <div class="ri-count">${r.count} 📷</div>
-      </div>
-    `).join('');
+
+    const bySetor = {};
+    setorOrder.forEach(s=> bySetor[s] = []);
+    const outros = [];
+    reports.forEach(r=>{
+      const s = r.header.setor;
+      if(s && bySetor[s]) bySetor[s].push(r);
+      else outros.push(r);
+    });
+
+    let html = '';
+    setorOrder.forEach(setor=>{
+      const list = bySetor[setor];
+      if(list.length === 0) return;
+      html += `<div class="task-group-title" style="margin-top:4px;">${escapeHtml(setor)}</div>`;
+      html += list.map(reportItemHtml).join('');
+    });
+    if(outros.length > 0){
+      html += `<div class="task-group-title" style="margin-top:4px;">Outros</div>`;
+      html += outros.map(reportItemHtml).join('');
+    }
+    main.innerHTML = html;
+
     main.querySelectorAll('.report-item').forEach(el=>{
-      el.onclick = ()=> openReport(el.getAttribute('data-id'));
+      el.onclick = (ev)=>{
+        if(ev.target.closest('.ri-del')) return;
+        openReport(el.getAttribute('data-id'));
+      };
+    });
+    main.querySelectorAll('.ri-del').forEach(btn=>{
+      btn.onclick = async (ev)=>{
+        ev.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        const r = state.reports.find(x=>x.id===id);
+        const label = r ? `${r.header.embarcacao} — ${r.header.turma} (${r.header.periodo||''})` : 'este relatório';
+        if(!confirm(`Excluir "${label}"? Isso apaga todas as fotos dele e não pode ser desfeito.`)) return;
+        btn.disabled = true;
+        try{
+          await deleteReport(id);
+          showToast('Relatório excluído.');
+          renderHome();
+        }catch(e){
+          console.error(e); showToast('Erro ao excluir.'); btn.disabled = false;
+        }
+      };
     });
   });
 }
@@ -702,7 +759,11 @@ function renderHeaderForm(mode){
         <label>CMT || CFM</label>
         <input type="text" id="f-cmtcfm" placeholder="Ex: CMT Lukas Caceres / CHM Romulo Veloso" value="${escapeHtml(h.cmtcfm||'')}">
         <label>Setor</label>
-        <input type="text" id="f-setor" placeholder="Ex: Máquinas" value="${escapeHtml(h.setor||'')}">
+        <div class="phase-choice" id="setor-choice">
+          <button type="button" class="phase-btn${h.setor==='Máquinas'?' active-Durante':''}" data-setor="Máquinas">Máquinas</button>
+          <button type="button" class="phase-btn${h.setor==='Passadiço'?' active-Durante':''}" data-setor="Passadiço">Passadiço</button>
+          <button type="button" class="phase-btn${h.setor==='Embarcação'?' active-Durante':''}" data-setor="Embarcação">Embarcação</button>
+        </div>
         <label>Período</label>
         <input type="text" id="f-periodo" placeholder="Ex: 04/09/24 a 11/09/24" value="${escapeHtml(h.periodo||'')}">
         <label>Colaboradores</label>
@@ -712,18 +773,52 @@ function renderHeaderForm(mode){
           <button class="btn btn-primary" id="btn-save-header">${isEdit ? 'Salvar alterações' : 'Criar relatório'}</button>
         </div>
       </div>
+      ${isEdit ? `
+      <div class="card">
+        <h2>Zona de risco</h2>
+        <div class="hint" style="margin-bottom:10px;">Isso apaga o relatório inteiro e todas as fotos dele. Não pode ser desfeito.</div>
+        <button class="btn btn-danger-ghost" id="btn-delete-report">Excluir este relatório</button>
+      </div>
+      ` : ''}
     </main>
   `;
   document.getElementById('btn-back').onclick = ()=>{
     state.screen = isEdit ? 'report' : 'home'; render();
     if(isEdit) renderReportBody();
   };
+  let selectedSetor = h.setor || null;
+  document.querySelectorAll('#setor-choice .phase-btn').forEach(btn=>{
+    btn.onclick = ()=>{
+      selectedSetor = btn.getAttribute('data-setor');
+      document.querySelectorAll('#setor-choice .phase-btn').forEach(b=>b.className='phase-btn');
+      btn.className = 'phase-btn active-Durante';
+    };
+  });
+  if(isEdit){
+    document.getElementById('btn-delete-report').onclick = async ()=>{
+      const label = `${h.embarcacao} — ${h.turma} (${h.periodo||''})`;
+      if(!confirm(`Excluir "${label}"? Isso apaga todas as fotos dele e não pode ser desfeito.`)) return;
+      const btn = document.getElementById('btn-delete-report');
+      btn.innerHTML = '<span class="spinner"></span> Excluindo…'; btn.disabled = true;
+      try{
+        await deleteReport(state.currentReportId);
+        showToast('Relatório excluído.');
+        state.currentReportId = null;
+        state.screen = 'home';
+        render();
+      }catch(e){
+        console.error(e); showToast('Erro ao excluir.');
+        btn.innerHTML = 'Excluir este relatório'; btn.disabled = false;
+      }
+    };
+  }
   document.getElementById('btn-save-header').onclick = async ()=>{
+    if(!selectedSetor){ showToast('Selecione o setor.'); return; }
     const data = {
       embarcacao: document.getElementById('f-embarcacao').value.trim(),
       turma: document.getElementById('f-turma').value.trim(),
       cmtcfm: document.getElementById('f-cmtcfm').value.trim(),
-      setor: document.getElementById('f-setor').value.trim(),
+      setor: selectedSetor,
       periodo: document.getElementById('f-periodo').value.trim(),
       colaboradores: document.getElementById('f-colaboradores').value.trim(),
     };
