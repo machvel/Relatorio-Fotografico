@@ -152,6 +152,8 @@
   .phase-Depois{background:#D5F5E3;color:#1E7B4D;}
   .entry-row .er-meta{font-size:11px;color:var(--muted);margin-top:2px;}
   .entry-row .er-del{background:none;border:none;color:var(--danger);font-size:18px;padding:6px;cursor:pointer;flex:none;}
+  .drag-handle{background:none;border:none;color:var(--muted);font-size:17px;padding:6px 8px;cursor:grab;touch-action:none;flex:none;}
+  .dragging-item{opacity:.9;box-shadow:0 8px 20px rgba(0,0,0,.18);background:#fff;border-radius:9px;}
 
   .fab-bar{
     position:fixed;bottom:0;left:0;right:0;
@@ -214,7 +216,8 @@ const state = {
   currentEntries: [],
   pendingPhotos: [],      // [{dataUrl, w, h, phase}]
   authorName: '',
-  loading: false
+  loading: false,
+  expandedTasks: new Set()
 };
 
 function phaseLabel(phase){
@@ -257,6 +260,72 @@ async function moveEntry(direction, key, task){
   ]);
   state.currentEntries = await fetchEntries(state.currentReportId);
   renderReportBody();
+}
+
+// Generic press-and-drag reordering for a flat list of sibling items inside `container`.
+// `itemSelector` identifies the draggable items; `handleSelector` identifies the grip that starts the drag.
+// `onReorder(orderedItemElements)` is called once the drag ends, with items in their new DOM order.
+function enableDragReorder(container, itemSelector, handleSelector, onReorder){
+  let dragging = null, startY = 0;
+  const items = ()=> Array.from(container.querySelectorAll(itemSelector));
+
+  function onPointerMove(e){
+    if(!dragging) return;
+    e.preventDefault();
+    const dy = e.clientY - startY;
+    dragging.style.transform = `translateY(${dy}px)`;
+    const dRect = dragging.getBoundingClientRect();
+    const dCenter = dRect.top + dRect.height/2;
+    for(const sib of items()){
+      if(sib === dragging) continue;
+      const sRect = sib.getBoundingClientRect();
+      const sCenter = sRect.top + sRect.height/2;
+      if(Math.abs(dCenter - sCenter) < sRect.height/2){
+        const children = Array.from(container.children);
+        const dIdx = children.indexOf(dragging);
+        const sIdx = children.indexOf(sib);
+        if(dIdx < sIdx) container.insertBefore(dragging, sib.nextSibling);
+        else container.insertBefore(dragging, sib);
+        const prevTop = dRect.top;
+        dragging.style.transform = '';
+        const restRect = dragging.getBoundingClientRect();
+        const newDy = prevTop - restRect.top;
+        dragging.style.transform = `translateY(${newDy}px)`;
+        startY = e.clientY - newDy;
+        break;
+      }
+    }
+  }
+
+  function onPointerUp(){
+    if(!dragging) return;
+    const el = dragging;
+    el.style.transform = '';
+    el.style.position = '';
+    el.style.zIndex = '';
+    el.style.transition = '';
+    el.classList.remove('dragging-item');
+    document.removeEventListener('pointermove', onPointerMove);
+    document.removeEventListener('pointerup', onPointerUp);
+    dragging = null;
+    onReorder(items());
+  }
+
+  container.addEventListener('pointerdown', (e)=>{
+    const handle = e.target.closest(handleSelector);
+    if(!handle || !container.contains(handle)) return;
+    const item = handle.closest(itemSelector);
+    if(!item) return;
+    e.preventDefault();
+    dragging = item;
+    startY = e.clientY;
+    item.classList.add('dragging-item');
+    item.style.position = 'relative';
+    item.style.zIndex = '100';
+    item.style.transition = 'none';
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+  });
 }
 
 function showToast(msg){
@@ -919,35 +988,39 @@ function renderReportBody(){
   taskOrder = applyTaskOrder(taskOrder, header.taskOrder);
 
   let groupsHtml = taskOrder.map((task, idx)=>{
-    const rows = byTask[task].map((entry, eIdx)=>`
-      <div class="entry-row">
+    const rows = byTask[task].map((entry)=>`
+      <div class="entry-row" data-key="${entry.key}">
+        <button class="drag-handle">☰</button>
         <img src="${entry.photo}">
         <div class="er-info">
           <span class="phase-tag phase-${entry.phase}">${phaseLabel(entry.phase)}</span>
           <div class="er-meta">${entry.author ? escapeHtml(entry.author) : 'Sem nome'} · ${new Date(entry.ts).toLocaleDateString('pt-BR')}</div>
         </div>
-        <span style="flex:none;display:flex;flex-direction:column;">
-          <button class="er-move" data-key="${entry.key}" data-task="${encodeURIComponent(task)}" data-dir="up" ${eIdx===0?'disabled':''} style="background:none;border:none;color:var(--navy);font-size:13px;padding:2px 6px;cursor:pointer;">▲</button>
-          <button class="er-move" data-key="${entry.key}" data-task="${encodeURIComponent(task)}" data-dir="down" ${eIdx===byTask[task].length-1?'disabled':''} style="background:none;border:none;color:var(--navy);font-size:13px;padding:2px 6px;cursor:pointer;">▼</button>
-        </span>
         <button class="er-edit" data-key="${entry.key}" style="background:none;border:none;color:var(--navy);font-size:16px;padding:6px;cursor:pointer;flex:none;">✎</button>
         <button class="er-del" data-key="${entry.key}">✕</button>
       </div>
     `).join('');
-    return `<div class="task-group">
-      <div class="task-group-title" style="display:flex;justify-content:space-between;align-items:center;">
-        <span>${escapeHtml(task)}</span>
+    const isOpen = state.expandedTasks.has(task);
+    return `<div class="task-group" data-task="${encodeURIComponent(task)}">
+      <div class="task-group-title task-toggle" data-task="${encodeURIComponent(task)}" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+        <span style="display:flex;align-items:center;gap:6px;min-width:0;">
+          <button class="drag-handle">☰</button>
+          <span class="task-chevron" style="flex:none;">${isOpen ? '▾' : '▸'}</span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(task)}</span>
+          <span style="flex:none;background:var(--border);color:var(--muted);font-size:11px;font-weight:700;border-radius:20px;padding:2px 8px;">${byTask[task].length}</span>
+        </span>
         <span style="flex:none;">
-          <button class="btn-sm btn-ghost move-task" data-task="${encodeURIComponent(task)}" data-dir="up" ${idx===0?'disabled':''} style="padding:4px 9px;margin-left:4px;">↑</button>
-          <button class="btn-sm btn-ghost move-task" data-task="${encodeURIComponent(task)}" data-dir="down" ${idx===taskOrder.length-1?'disabled':''} style="padding:4px 9px;margin-left:4px;">↓</button>
           <button class="btn-sm btn-ghost move-task-report" data-task="${encodeURIComponent(task)}" style="padding:4px 9px;margin-left:4px;">⇢ relatório</button>
         </span>
       </div>
-      ${rows}
+      <div class="task-group-rows" data-task-rows="${encodeURIComponent(task)}" style="display:${isOpen?'block':'none'};margin-top:8px;">
+        ${rows}
+      </div>
     </div>`;
   }).join('');
 
-  main.innerHTML = headerCard + `<div class="card"><h2>Fotos (${entries.length})</h2>${groupsHtml}</div>`;
+
+  main.innerHTML = headerCard + `<div class="card"><h2>Fotos (${entries.length})</h2><div id="task-groups-container">${groupsHtml}</div></div>`;
 
   document.getElementById('btn-edit-header').onclick = ()=>{ state.screen='edit-header'; render(); };
 
@@ -971,27 +1044,6 @@ function renderReportBody(){
     };
   });
 
-  main.querySelectorAll('.move-task').forEach(btn=>{
-    btn.onclick = async ()=>{
-      if(btn.disabled) return;
-      btn.disabled = true;
-      const task = decodeURIComponent(btn.getAttribute('data-task'));
-      const dir = btn.getAttribute('data-dir');
-      await moveTask(dir, task);
-    };
-  });
-
-  main.querySelectorAll('.er-move').forEach(btn=>{
-    btn.onclick = async ()=>{
-      if(btn.disabled) return;
-      btn.disabled = true;
-      const key = btn.getAttribute('data-key');
-      const task = decodeURIComponent(btn.getAttribute('data-task'));
-      const dir = btn.getAttribute('data-dir');
-      await moveEntry(dir, key, task);
-    };
-  });
-
   main.querySelectorAll('.move-task-report').forEach(btn=>{
     btn.onclick = ()=>{
       const task = decodeURIComponent(btn.getAttribute('data-task'));
@@ -999,6 +1051,52 @@ function renderReportBody(){
       state.screen = 'move-task-report';
       render();
     };
+  });
+
+  main.querySelectorAll('.task-toggle').forEach(titleEl=>{
+    titleEl.onclick = (ev)=>{
+      if(ev.target.closest('button')) return;
+      const task = decodeURIComponent(titleEl.getAttribute('data-task'));
+      const rowsEl = main.querySelector(`.task-group-rows[data-task-rows="${titleEl.getAttribute('data-task')}"]`);
+      const chevron = titleEl.querySelector('.task-chevron');
+      if(state.expandedTasks.has(task)){
+        state.expandedTasks.delete(task);
+        if(rowsEl) rowsEl.style.display = 'none';
+        if(chevron) chevron.textContent = '▸';
+      } else {
+        state.expandedTasks.add(task);
+        if(rowsEl) rowsEl.style.display = 'block';
+        if(chevron) chevron.textContent = '▾';
+      }
+    };
+  });
+
+  // Drag-and-drop reordering of tasks (whole groups)
+  const taskContainer = document.getElementById('task-groups-container');
+  if(taskContainer){
+    enableDragReorder(taskContainer, '.task-group', '.task-group-title .drag-handle', (orderedEls)=>{
+      const newTaskOrder = orderedEls.map(el=> decodeURIComponent(el.getAttribute('data-task')));
+      updateReportHeader(state.currentReportId, {taskOrder: newTaskOrder})
+        .then(()=> fetchHeader(state.currentReportId))
+        .then(h=>{ state.currentHeader = h; })
+        .catch(e=> console.error('Erro ao salvar ordem das tarefas', e));
+    });
+  }
+
+  // Drag-and-drop reordering of photos within each task
+  main.querySelectorAll('.task-group-rows').forEach(rowsEl=>{
+    enableDragReorder(rowsEl, '.entry-row', '.drag-handle', (orderedEls)=>{
+      const baseTs = Date.now();
+      const keys = orderedEls.map(el=> el.getAttribute('data-key'));
+      Promise.all(keys.map((key, i)=> updateEntry(state.currentReportId, key, {ts: baseTs + i})))
+        .then(()=>{
+          keys.forEach((key, i)=>{
+            const entry = state.currentEntries.find(e=>e.key===key);
+            if(entry) entry.ts = baseTs + i;
+          });
+        })
+        .catch(e=> console.error('Erro ao salvar ordem das fotos', e));
+    });
   });
 }
 
