@@ -269,6 +269,15 @@ async function moveEntry(direction, key, task){
   renderReportBody();
 }
 
+async function toggleEntryPageBreak(key){
+  const entry = state.currentEntries.find(e=>e.key===key);
+  if(!entry) return;
+  const newVal = !entry.pageBreakBefore;
+  await updateEntry(state.currentReportId, key, {pageBreakBefore: newVal});
+  entry.pageBreakBefore = newVal;
+  renderReportBody();
+}
+
 // Generic press-and-drag reordering for a flat list of sibling items inside `container`.
 // `itemSelector` identifies the draggable items; `handleSelector` identifies the grip that starts the drag.
 // `onReorder(orderedItemElements)` is called once the drag ends, with items in their new DOM order.
@@ -609,12 +618,25 @@ async function buildPDFDoc(reportId){
   doc.setDrawColor(...orange); doc.setLineWidth(10);
   doc.line(PW-6, 0, PW-6, PH);
 
-  const photosPerSlide = Math.min(4, Math.max(1, header.photosPerSlide || 2));
+  const maxPhotosPerSlide = Math.min(4, Math.max(1, header.photosPerSlide || 2));
+
+  function chunkTaskEntries(taskEntries){
+    const chunks = [];
+    let current = [];
+    for(const entry of taskEntries){
+      if(current.length > 0 && (entry.pageBreakBefore || current.length >= maxPhotosPerSlide)){
+        chunks.push(current);
+        current = [];
+      }
+      current.push(entry);
+    }
+    if(current.length > 0) chunks.push(current);
+    return chunks;
+  }
 
   for(const task of taskOrder){
     const taskEntries = byTask[task];
-    for(let i=0; i<taskEntries.length; i+=photosPerSlide){
-      const chunk = taskEntries.slice(i, i+photosPerSlide);
+    for(const chunk of chunkTaskEntries(taskEntries)){
       doc.addPage([780,540], 'landscape');
       // title
       doc.setTextColor(...blue);
@@ -1022,7 +1044,9 @@ function renderReportBody(){
   taskOrder = applyTaskOrder(taskOrder, header.taskOrder);
 
   let groupsHtml = taskOrder.map((task, idx)=>{
-    const rows = byTask[task].map((entry)=>`
+    const taskEntries = byTask[task];
+    const rowsParts = taskEntries.map((entry, eIdx)=>{
+      const row = `
       <div class="entry-row" data-key="${entry.key}">
         <button class="drag-handle">☰</button>
         <img src="${entry.photo}">
@@ -1032,8 +1056,21 @@ function renderReportBody(){
         </div>
         <button class="er-edit" data-key="${entry.key}" style="background:none;border:none;color:var(--navy);font-size:16px;padding:6px;cursor:pointer;flex:none;">✎</button>
         <button class="er-del" data-key="${entry.key}">✕</button>
-      </div>
-    `).join('');
+      </div>`;
+      if(eIdx === taskEntries.length - 1) return row;
+      const nextEntry = taskEntries[eIdx+1];
+      const isBreak = !!nextEntry.pageBreakBefore;
+      const divider = `
+      <button class="page-break-toggle" data-key="${nextEntry.key}" style="
+        display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;cursor:pointer;padding:2px 0;margin:2px 0;
+      ">
+        <span style="flex:1;border-top:${isBreak?'2px dashed var(--orange)':'1px dashed var(--border)'};"></span>
+        <span style="font-size:10.5px;font-weight:700;color:${isBreak?'var(--orange)':'var(--muted)'};white-space:nowrap;">${isBreak?'✂ nova página aqui':'mesma página'}</span>
+        <span style="flex:1;border-top:${isBreak?'2px dashed var(--orange)':'1px dashed var(--border)'};"></span>
+      </button>`;
+      return row + divider;
+    });
+    const rows = rowsParts.join('');
     const isOpen = state.expandedTasks.has(task);
     return `<div class="task-group" data-task="${encodeURIComponent(task)}">
       <div class="task-group-title task-toggle" data-task="${encodeURIComponent(task)}" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
@@ -1092,6 +1129,13 @@ function renderReportBody(){
     btn.onclick = async ()=>{
       const task = decodeURIComponent(btn.getAttribute('data-task'));
       await renameTask(task);
+    };
+  });
+
+  main.querySelectorAll('.page-break-toggle').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const key = btn.getAttribute('data-key');
+      await toggleEntryPageBreak(key);
     };
   });
 
