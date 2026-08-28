@@ -150,6 +150,7 @@
   .phase-Antes{background:#FDEBD0;color:#8a5a00;}
   .phase-Durante{background:#D6EAF8;color:#1B5C8A;}
   .phase-Depois{background:#D5F5E3;color:#1E7B4D;}
+  .phase-Outro{background:#E8DAEF;color:#6C3483;}
   .entry-row .er-meta{font-size:11px;color:var(--muted);margin-top:2px;}
   .entry-row .er-del{background:none;border:none;color:var(--danger);font-size:18px;padding:6px;cursor:pointer;flex:none;}
   .drag-handle{background:none;border:none;color:var(--muted);font-size:17px;padding:6px 8px;cursor:grab;touch-action:none;flex:none;}
@@ -175,6 +176,7 @@
   .phase-btn.active-Antes{background:#FDEBD0;border-color:#e0a233;color:#8a5a00;}
   .phase-btn.active-Durante{background:#D6EAF8;border-color:#4472C4;color:#1B5C8A;}
   .phase-btn.active-Depois{background:#D5F5E3;border-color:#3fa66d;color:#1E7B4D;}
+  .phase-btn.active-Outro{background:#E8DAEF;border-color:#8e44ad;color:#6C3483;}
 
   .hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
   .toast{
@@ -220,7 +222,12 @@ const state = {
   expandedTasks: new Set()
 };
 
-function phaseLabel(phase){
+function phaseLabel(entry){
+  const phase = typeof entry === 'string' ? entry : entry.phase;
+  if(phase === 'Outro'){
+    const text = (typeof entry === 'object' && entry.phaseText) ? entry.phaseText : 'Outro';
+    return text;
+  }
   return phase === 'Durante' ? 'Durante a Atividade' : `${phase} da Atividade`;
 }
 
@@ -602,11 +609,12 @@ async function buildPDFDoc(reportId){
   doc.setDrawColor(...orange); doc.setLineWidth(10);
   doc.line(PW-6, 0, PW-6, PH);
 
+  const photosPerSlide = Math.min(4, Math.max(1, header.photosPerSlide || 2));
+
   for(const task of taskOrder){
     const taskEntries = byTask[task];
-    // chunk into pairs (up to 2 photos per page)
-    for(let i=0; i<taskEntries.length; i+=2){
-      const chunk = taskEntries.slice(i, i+2);
+    for(let i=0; i<taskEntries.length; i+=photosPerSlide){
+      const chunk = taskEntries.slice(i, i+photosPerSlide);
       doc.addPage([780,540], 'landscape');
       // title
       doc.setTextColor(...blue);
@@ -627,57 +635,39 @@ async function buildPDFDoc(reportId){
       const areaBottom = PH - 20;
       const areaH = areaBottom - areaTop;
       const labelH = 22, labelGap = 8;
-      const maxH = areaH - labelH - labelGap;
 
-      if(chunk.length === 1){
-        // single photo, block (image + label) centered vertically in the available area
-        const entry = chunk[0];
+      // Grid: 1 photo -> 1x1; 2 -> 1x2; 3-4 -> 2x2 (2 cols)
+      const cols = chunk.length <= 1 ? 1 : 2;
+      const rows = Math.ceil(chunk.length / cols);
+      const gap = 16;
+      const cellW = (PW - 80 - gap*(cols-1)) / cols;
+      const cellH = (areaH - gap*(rows-1)) / rows;
+      const maxImgH = cellH - labelH - labelGap;
+
+      chunk.forEach((entry, idx)=>{
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const cellX = 40 + col*(cellW+gap);
+        const cellY = areaTop + row*(cellH+gap);
         try{
-          const maxW = PW-100;
-          const ratio = Math.min(maxW/entry.w, maxH/entry.h);
+          const ratio = Math.min(cellW/entry.w, maxImgH/entry.h);
           const iw = entry.w*ratio, ih = entry.h*ratio;
           const blockH = ih + labelGap + labelH;
-          const blockTop = areaTop + (areaH-blockH)/2;
-          const ix = (PW-iw)/2;
+          const blockTop = cellY + (cellH-blockH)/2;
+          const ix = cellX + (cellW-iw)/2;
           doc.addImage(entry.photo, 'JPEG', ix, blockTop, iw, ih);
 
           doc.setDrawColor(...blue); doc.setLineWidth(1);
-          const label = phaseLabel(entry.phase);
-          doc.setFont('helvetica','bold'); doc.setFontSize(13);
-          const lw = doc.getTextWidth(label) + 40;
-          const lx = (PW-lw)/2;
+          const label = phaseLabel(entry);
+          doc.setFont('helvetica','bold'); doc.setFontSize(chunk.length<=2 ? 12 : 10.5);
+          const lw = doc.getTextWidth(label) + (chunk.length<=2 ? 32 : 24);
+          const lx = cellX + (cellW-lw)/2;
           const labelRectY = blockTop + ih + labelGap;
           doc.rect(lx, labelRectY, lw, labelH);
           doc.setTextColor(20,20,20);
-          doc.text(label, PW/2, labelRectY + labelH/2 + 4, {align:'center'});
+          doc.text(label, cellX+cellW/2, labelRectY + labelH/2 + 4, {align:'center'});
         }catch(err){ console.error('img err', err); }
-      } else {
-        // two photos side by side, each block centered vertically in the available area
-        const gap = 16;
-        const colW = (PW-80-gap)/2;
-        const colXs = [40, 40+colW+gap];
-        chunk.forEach((entry, idx)=>{
-          const cx = colXs[idx];
-          try{
-            const ratio = Math.min(colW/entry.w, maxH/entry.h);
-            const iw = entry.w*ratio, ih = entry.h*ratio;
-            const blockH = ih + labelGap + labelH;
-            const blockTop = areaTop + (areaH-blockH)/2;
-            const ix = cx + (colW-iw)/2;
-            doc.addImage(entry.photo, 'JPEG', ix, blockTop, iw, ih);
-
-            doc.setDrawColor(...blue); doc.setLineWidth(1);
-            const label = phaseLabel(entry.phase);
-            doc.setFont('helvetica','bold'); doc.setFontSize(12);
-            const lw = doc.getTextWidth(label) + 32;
-            const lx = cx + (colW-lw)/2;
-            const labelRectY = blockTop + ih + labelGap;
-            doc.rect(lx, labelRectY, lw, labelH);
-            doc.setTextColor(20,20,20);
-            doc.text(label, cx+colW/2, labelRectY + labelH/2 + 4, {align:'center'});
-          }catch(err){ console.error('img err', err); }
-        });
-      }
+      });
 
       // sidebar stripes (echo template branding)
       doc.setDrawColor(...orange); doc.setLineWidth(10);
@@ -867,6 +857,13 @@ function renderHeaderForm(mode){
         <label>Colaboradores</label>
         <input type="text" id="f-colaboradores" placeholder="Ex: João Silva, Maria Souza, Pedro Lima" value="${escapeHtml(h.colaboradores||'')}">
         <div class="hint">Separe os nomes por vírgula.</div>
+
+        <label>Fotos por página no PDF</label>
+        <div class="phase-choice" id="ppp-choice">
+          ${[1,2,3,4].map(n=>`<button type="button" class="phase-btn${(h.photosPerSlide||2)===n?' active-Durante':''}" data-ppp="${n}">${n}</button>`).join('')}
+        </div>
+        <div class="hint">Quantas fotos aparecem juntas em cada página do relatório (máximo 4).</div>
+
         <div class="btn-row">
           <button class="btn btn-primary" id="btn-save-header">${isEdit ? 'Salvar alterações' : 'Criar relatório'}</button>
         </div>
@@ -889,6 +886,14 @@ function renderHeaderForm(mode){
     btn.onclick = ()=>{
       selectedSetor = btn.getAttribute('data-setor');
       document.querySelectorAll('#setor-choice .phase-btn').forEach(b=>b.className='phase-btn');
+      btn.className = 'phase-btn active-Durante';
+    };
+  });
+  let selectedPpp = h.photosPerSlide || 2;
+  document.querySelectorAll('#ppp-choice .phase-btn').forEach(btn=>{
+    btn.onclick = ()=>{
+      selectedPpp = Number(btn.getAttribute('data-ppp'));
+      document.querySelectorAll('#ppp-choice .phase-btn').forEach(b=>b.className='phase-btn');
       btn.className = 'phase-btn active-Durante';
     };
   });
@@ -919,6 +924,7 @@ function renderHeaderForm(mode){
       setor: selectedSetor,
       periodo: document.getElementById('f-periodo').value.trim(),
       colaboradores: document.getElementById('f-colaboradores').value.trim(),
+      photosPerSlide: selectedPpp,
     };
     if(!data.embarcacao || !data.periodo){ showToast('Preencha ao menos Embarcação e Período.'); return; }
     const btn = document.getElementById('btn-save-header');
@@ -1021,7 +1027,7 @@ function renderReportBody(){
         <button class="drag-handle">☰</button>
         <img src="${entry.photo}">
         <div class="er-info">
-          <span class="phase-tag phase-${entry.phase}">${phaseLabel(entry.phase)}</span>
+          <span class="phase-tag phase-${entry.phase}">${phaseLabel(entry)}</span>
           <div class="er-meta">${entry.author ? escapeHtml(entry.author) : 'Sem nome'} · ${new Date(entry.ts).toLocaleDateString('pt-BR')}</div>
         </div>
         <button class="er-edit" data-key="${entry.key}" style="background:none;border:none;color:var(--navy);font-size:16px;padding:6px;cursor:pointer;flex:none;">✎</button>
@@ -1184,7 +1190,9 @@ function renderAdd(){
             <button type="button" class="phase-btn${p.phase==='Antes'?' active-Antes':''}" data-idx="${i}" data-phase="Antes">Antes</button>
             <button type="button" class="phase-btn${p.phase==='Durante'?' active-Durante':''}" data-idx="${i}" data-phase="Durante">Durante</button>
             <button type="button" class="phase-btn${p.phase==='Depois'?' active-Depois':''}" data-idx="${i}" data-phase="Depois">Depois</button>
+            <button type="button" class="phase-btn${p.phase==='Outro'?' active-Outro':''}" data-idx="${i}" data-phase="Outro">Outro</button>
           </div>
+          ${p.phase==='Outro' ? `<input type="text" class="phase-outro-text" data-idx="${i}" placeholder="Escreva a etiqueta..." value="${escapeHtml(p.phaseText||'')}" style="margin-top:6px;padding:8px 10px;font-size:13px;">` : ''}
         </div>
         <button class="photo-remove" data-idx="${i}" style="background:none;border:none;color:var(--danger);font-size:18px;padding:6px;cursor:pointer;flex:none;">✕</button>
       </div>
@@ -1195,6 +1203,12 @@ function renderAdd(){
         const idx = Number(btn.getAttribute('data-idx'));
         state.pendingPhotos[idx].phase = btn.getAttribute('data-phase');
         renderPhotoList();
+      };
+    });
+    photoList.querySelectorAll('.phase-outro-text').forEach(inp=>{
+      inp.oninput = ()=>{
+        const idx = Number(inp.getAttribute('data-idx'));
+        state.pendingPhotos[idx].phaseText = inp.value;
       };
     });
     photoList.querySelectorAll('.photo-remove').forEach(btn=>{
@@ -1216,7 +1230,7 @@ function renderAdd(){
         for(const file of input.files){
           try{
             const compressed = await compressImage(file);
-            state.pendingPhotos.push({...compressed, phase: null});
+            state.pendingPhotos.push({...compressed, phase: null, phaseText: ''});
           }catch(e){ console.error(e); showToast('Não foi possível ler uma das fotos.'); }
         }
         renderPhotoList();
@@ -1232,13 +1246,15 @@ function renderAdd(){
     if(!task){ showToast('Informe a tarefa.'); return; }
     const missingPhase = state.pendingPhotos.some(p=>!p.phase);
     if(missingPhase){ showToast('Selecione a fase de cada foto.'); return; }
+    const missingOutroText = state.pendingPhotos.some(p=>p.phase==='Outro' && !(p.phaseText||'').trim());
+    if(missingOutroText){ showToast('Escreva a etiqueta das fotos marcadas como "Outro".'); return; }
     const btn = document.getElementById('btn-save');
     btn.innerHTML = '<span class="spinner"></span> Salvando…'; btn.disabled = true;
     try{
       if(author) await saveAuthorName(author);
       const baseTs = Date.now();
       await Promise.all(state.pendingPhotos.map((p, i)=> addEntry(state.currentReportId, {
-        task, phase: p.phase, author,
+        task, phase: p.phase, phaseText: p.phase==='Outro' ? p.phaseText.trim() : '', author,
         photo: p.dataUrl, w: p.w, h: p.h,
         ts: baseTs + i
       })));
@@ -1283,6 +1299,10 @@ function renderEditEntry(){
           <button type="button" class="phase-btn${entry.phase==='Antes'?' active-Antes':''}" data-phase="Antes">Antes</button>
           <button type="button" class="phase-btn${entry.phase==='Durante'?' active-Durante':''}" data-phase="Durante">Durante</button>
           <button type="button" class="phase-btn${entry.phase==='Depois'?' active-Depois':''}" data-phase="Depois">Depois</button>
+          <button type="button" class="phase-btn${entry.phase==='Outro'?' active-Outro':''}" data-phase="Outro">Outro</button>
+        </div>
+        <div id="outro-text-area" style="${entry.phase==='Outro'?'':'display:none;'}margin-top:8px;">
+          <input type="text" id="f-phase-text" placeholder="Escreva a etiqueta..." value="${escapeHtml(entry.phaseText||'')}">
         </div>
 
         <div class="btn-row">
@@ -1299,11 +1319,13 @@ function renderEditEntry(){
   document.getElementById('btn-back').onclick = ()=>{ state.screen='report'; render(); renderReportBody(); };
 
   let selectedPhase = entry.phase;
+  const outroArea = document.getElementById('outro-text-area');
   document.querySelectorAll('.phase-btn').forEach(btn=>{
     btn.onclick = ()=>{
       selectedPhase = btn.getAttribute('data-phase');
       document.querySelectorAll('.phase-btn').forEach(b=>b.className='phase-btn');
       btn.className = `phase-btn active-${selectedPhase}`;
+      outroArea.style.display = selectedPhase === 'Outro' ? 'block' : 'none';
     };
   });
 
@@ -1311,10 +1333,12 @@ function renderEditEntry(){
     const task = document.getElementById('f-task').value.trim();
     if(!task){ showToast('Informe a tarefa.'); return; }
     if(!selectedPhase){ showToast('Selecione a fase da atividade.'); return; }
+    const phaseText = document.getElementById('f-phase-text').value.trim();
+    if(selectedPhase === 'Outro' && !phaseText){ showToast('Escreva a etiqueta da fase.'); return; }
     const btn = document.getElementById('btn-save-edit');
     btn.innerHTML = '<span class="spinner"></span> Salvando…'; btn.disabled = true;
     try{
-      await updateEntry(state.currentReportId, entry.key, {task, phase: selectedPhase});
+      await updateEntry(state.currentReportId, entry.key, {task, phase: selectedPhase, phaseText: selectedPhase==='Outro' ? phaseText : ''});
       state.currentEntries = await fetchEntries(state.currentReportId);
       showToast('Foto atualizada!');
       state.editingEntry = null;
