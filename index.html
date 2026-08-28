@@ -423,6 +423,32 @@ async function moveTaskToReport(sourceReportId, targetReportId, entries, newTask
   }
 }
 
+async function renameTask(oldTask){
+  const input = prompt('Novo nome da tarefa:', oldTask);
+  if(input === null) return;
+  const newTask = input.trim();
+  if(!newTask || newTask === oldTask) return;
+
+  const entries = state.currentEntries.filter(e=>e.task===oldTask);
+  await Promise.all(entries.map(e=> updateEntry(state.currentReportId, e.key, {task: newTask})));
+
+  const header = state.currentHeader;
+  if(header.taskOrder && header.taskOrder.includes(oldTask)){
+    const newOrder = header.taskOrder.map(t=> t===oldTask ? newTask : t);
+    await updateReportHeader(state.currentReportId, {taskOrder: newOrder});
+    state.currentHeader = await fetchHeader(state.currentReportId);
+  }
+
+  if(state.expandedTasks.has(oldTask)){
+    state.expandedTasks.delete(oldTask);
+    state.expandedTasks.add(newTask);
+  }
+
+  state.currentEntries = await fetchEntries(state.currentReportId);
+  showToast('Tarefa renomeada!');
+  renderReportBody();
+}
+
 // ---------- Image handling ----------
 
 function compressImage(file){
@@ -1012,6 +1038,7 @@ function renderReportBody(){
           <span style="flex:none;background:var(--border);color:var(--muted);font-size:11px;font-weight:700;border-radius:20px;padding:2px 8px;">${byTask[task].length}</span>
         </span>
         <span style="flex:none;">
+          <button class="btn-sm btn-ghost rename-task" data-task="${encodeURIComponent(task)}" style="padding:4px 9px;margin-left:4px;">✎</button>
           <button class="btn-sm btn-ghost move-task-report" data-task="${encodeURIComponent(task)}" style="padding:4px 9px;margin-left:4px;">⇢ relatório</button>
         </span>
       </div>
@@ -1052,6 +1079,13 @@ function renderReportBody(){
       state.movingTask = task;
       state.screen = 'move-task-report';
       render();
+    };
+  });
+
+  main.querySelectorAll('.rename-task').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const task = decodeURIComponent(btn.getAttribute('data-task'));
+      await renameTask(task);
     };
   });
 
