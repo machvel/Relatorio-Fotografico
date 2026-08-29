@@ -699,6 +699,18 @@ async function buildPDFDoc(reportId){
         const gap = 10;
         const cellW = (PW - 80 - gap*(cols-1)) / cols;
         const cellH = (areaH - gap*(rows-1)) / rows;
+        const labelFontSize = chunk.length<=2 ? 12 : 10.5;
+        const lineH = chunk.length<=2 ? 14 : 12;
+        const labelPadW = chunk.length<=2 ? 24 : 18;
+        const maxLabelTextW = cellW - labelPadW - 4;
+
+        // Wrap every label first so all cells in this page reserve the same vertical space
+        // for the tallest caption (keeps the grid aligned and never lets text spill into
+        // the neighbouring photo — the box grows downward instead).
+        doc.setFont('helvetica','bold'); doc.setFontSize(labelFontSize);
+        const wrappedLabels = chunk.map(entry => doc.splitTextToSize(phaseLabel(entry), maxLabelTextW));
+        const maxLines = Math.max(1, ...wrappedLabels.map(l => l.length));
+        const labelH = maxLines*lineH + 10;
         const maxImgH = cellH - labelH - labelGap;
 
         chunk.forEach((entry, idx)=>{
@@ -715,14 +727,15 @@ async function buildPDFDoc(reportId){
             doc.addImage(entry.photo, 'JPEG', ix, blockTop, iw, ih);
 
             doc.setDrawColor(...blue); doc.setLineWidth(1);
-            const label = phaseLabel(entry);
-            doc.setFont('helvetica','bold'); doc.setFontSize(chunk.length<=2 ? 12 : 10.5);
-            const lw = doc.getTextWidth(label) + (chunk.length<=2 ? 32 : 24);
+            const lines = wrappedLabels[idx];
+            doc.setFont('helvetica','bold'); doc.setFontSize(labelFontSize);
+            const lw = Math.min(cellW-4, Math.max(...lines.map(l=>doc.getTextWidth(l))) + labelPadW);
             const lx = cellX + (cellW-lw)/2;
             const labelRectY = blockTop + ih + labelGap;
             doc.rect(lx, labelRectY, lw, labelH);
             doc.setTextColor(20,20,20);
-            doc.text(label, cellX+cellW/2, labelRectY + labelH/2 + 4, {align:'center'});
+            const textY = labelRectY + labelH/2 - (lines.length-1)*lineH/2 + 4;
+            doc.text(lines, cellX+cellW/2, textY, {align:'center'});
           }catch(err){ console.error('img err', err); }
         });
       }
