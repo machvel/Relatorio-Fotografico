@@ -657,39 +657,75 @@ async function buildPDFDoc(reportId){
       const areaBottom = PH - 20;
       const areaH = areaBottom - areaTop;
       const labelH = 22, labelGap = 8;
+      const pageMode = chunk[0].pageMode === 'text' ? 'text' : 'tags';
 
-      // Grid: 1 -> 1x1; 2 -> 1x2 (uma linha); 3 -> 1x3 (uma linha); 4 -> 2x2
-      const cols = chunk.length === 4 ? 2 : chunk.length;
-      const rows = Math.ceil(chunk.length / cols);
-      const gap = 10;
-      const cellW = (PW - 80 - gap*(cols-1)) / cols;
-      const cellH = (areaH - gap*(rows-1)) / rows;
-      const maxImgH = cellH - labelH - labelGap;
+      if(pageMode === 'text'){
+        // Single free-text note for the whole page, instead of per-photo labels
+        doc.setFont('helvetica','bold'); doc.setFontSize(12);
+        const noteText = (chunk[0].pageText || '').trim() || ' ';
+        const noteLines = doc.splitTextToSize(noteText, PW-120);
+        const noteBoxH = Math.max(30, noteLines.length*15 + 16);
+        const photosAreaH = areaH - noteBoxH - 10;
 
-      chunk.forEach((entry, idx)=>{
-        const col = idx % cols;
-        const row = Math.floor(idx / cols);
-        const cellX = 40 + col*(cellW+gap);
-        const cellY = areaTop + row*(cellH+gap);
-        try{
-          const ratio = Math.min(cellW/entry.w, maxImgH/entry.h);
-          const iw = entry.w*ratio, ih = entry.h*ratio;
-          const blockH = ih + labelGap + labelH;
-          const blockTop = cellY + (cellH-blockH)/2;
-          const ix = cellX + (cellW-iw)/2;
-          doc.addImage(entry.photo, 'JPEG', ix, blockTop, iw, ih);
+        const cols = chunk.length === 4 ? 2 : chunk.length;
+        const rows = Math.ceil(chunk.length / cols);
+        const gap = 10;
+        const cellW = (PW - 80 - gap*(cols-1)) / cols;
+        const cellH = (photosAreaH - gap*(rows-1)) / rows;
 
-          doc.setDrawColor(...blue); doc.setLineWidth(1);
-          const label = phaseLabel(entry);
-          doc.setFont('helvetica','bold'); doc.setFontSize(chunk.length<=2 ? 12 : 10.5);
-          const lw = doc.getTextWidth(label) + (chunk.length<=2 ? 32 : 24);
-          const lx = cellX + (cellW-lw)/2;
-          const labelRectY = blockTop + ih + labelGap;
-          doc.rect(lx, labelRectY, lw, labelH);
-          doc.setTextColor(20,20,20);
-          doc.text(label, cellX+cellW/2, labelRectY + labelH/2 + 4, {align:'center'});
-        }catch(err){ console.error('img err', err); }
-      });
+        chunk.forEach((entry, idx)=>{
+          const col = idx % cols;
+          const row = Math.floor(idx / cols);
+          const cellX = 40 + col*(cellW+gap);
+          const cellY = areaTop + row*(cellH+gap);
+          try{
+            const ratio = Math.min(cellW/entry.w, cellH/entry.h);
+            const iw = entry.w*ratio, ih = entry.h*ratio;
+            const ix = cellX + (cellW-iw)/2;
+            const iy = cellY + (cellH-ih)/2;
+            doc.addImage(entry.photo, 'JPEG', ix, iy, iw, ih);
+          }catch(err){ console.error('img err', err); }
+        });
+
+        const noteY = areaTop + photosAreaH + 10;
+        doc.setDrawColor(...blue); doc.setLineWidth(1);
+        doc.rect(40, noteY, PW-80, noteBoxH);
+        doc.setTextColor(20,20,20); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+        doc.text(noteLines, PW/2, noteY + noteBoxH/2 - (noteLines.length-1)*7 + 4, {align:'center'});
+      } else {
+        // Grid: 1 -> 1x1; 2 -> 1x2 (uma linha); 3 -> 1x3 (uma linha); 4 -> 2x2
+        const cols = chunk.length === 4 ? 2 : chunk.length;
+        const rows = Math.ceil(chunk.length / cols);
+        const gap = 10;
+        const cellW = (PW - 80 - gap*(cols-1)) / cols;
+        const cellH = (areaH - gap*(rows-1)) / rows;
+        const maxImgH = cellH - labelH - labelGap;
+
+        chunk.forEach((entry, idx)=>{
+          const col = idx % cols;
+          const row = Math.floor(idx / cols);
+          const cellX = 40 + col*(cellW+gap);
+          const cellY = areaTop + row*(cellH+gap);
+          try{
+            const ratio = Math.min(cellW/entry.w, maxImgH/entry.h);
+            const iw = entry.w*ratio, ih = entry.h*ratio;
+            const blockH = ih + labelGap + labelH;
+            const blockTop = cellY + (cellH-blockH)/2;
+            const ix = cellX + (cellW-iw)/2;
+            doc.addImage(entry.photo, 'JPEG', ix, blockTop, iw, ih);
+
+            doc.setDrawColor(...blue); doc.setLineWidth(1);
+            const label = phaseLabel(entry);
+            doc.setFont('helvetica','bold'); doc.setFontSize(chunk.length<=2 ? 12 : 10.5);
+            const lw = doc.getTextWidth(label) + (chunk.length<=2 ? 32 : 24);
+            const lx = cellX + (cellW-lw)/2;
+            const labelRectY = blockTop + ih + labelGap;
+            doc.rect(lx, labelRectY, lw, labelH);
+            doc.setTextColor(20,20,20);
+            doc.text(label, cellX+cellW/2, labelRectY + labelH/2 + 4, {align:'center'});
+          }catch(err){ console.error('img err', err); }
+        });
+      }
 
       // sidebar stripes (echo template branding)
       doc.setDrawColor(...orange); doc.setLineWidth(10);
@@ -1046,7 +1082,21 @@ function renderReportBody(){
   let groupsHtml = taskOrder.map((task, idx)=>{
     const taskEntries = byTask[task];
     const rowsParts = taskEntries.map((entry, eIdx)=>{
+      const isGroupStart = eIdx === 0 || !!entry.pageBreakBefore;
+      const pageMode = entry.pageMode === 'text' ? 'text' : 'tags';
+      let header = '';
+      if(isGroupStart){
+        header = `
+        <div style="background:var(--bg);border-radius:8px;padding:8px;margin:6px 0 4px;">
+          <div class="page-mode-choice" data-key="${entry.key}" style="display:flex;gap:6px;margin-bottom:${pageMode==='text'?'6px':'0'};">
+            <button type="button" class="page-mode-btn${pageMode==='tags'?' active':''}" data-key="${entry.key}" data-mode="tags" style="flex:1;padding:5px 4px;border-radius:7px;border:1.5px solid ${pageMode==='tags'?'var(--blue)':'var(--border)'};background:${pageMode==='tags'?'#D6EAF8':'#fff'};color:${pageMode==='tags'?'#1B5C8A':'var(--muted)'};font-size:11px;cursor:pointer;">Etiquetas por foto</button>
+            <button type="button" class="page-mode-btn${pageMode==='text'?' active':''}" data-key="${entry.key}" data-mode="text" style="flex:1;padding:5px 4px;border-radius:7px;border:1.5px solid ${pageMode==='text'?'#8e44ad':'var(--border)'};background:${pageMode==='text'?'#E8DAEF':'#fff'};color:${pageMode==='text'?'#6C3483':'var(--muted)'};font-size:11px;cursor:pointer;">Campo único</button>
+          </div>
+          ${pageMode==='text' ? `<textarea class="page-text-input" data-key="${entry.key}" placeholder="Texto desta página (ex: medidas, observações)..." style="width:100%;box-sizing:border-box;min-height:44px;font-size:12.5px;padding:7px 9px;">${escapeHtml(entry.pageText||'')}</textarea>` : ''}
+        </div>`;
+      }
       const row = `
+      ${header}
       <div class="entry-row" data-key="${entry.key}">
         <button class="drag-handle">☰</button>
         <img src="${entry.photo}">
@@ -1136,6 +1186,30 @@ function renderReportBody(){
     btn.onclick = async ()=>{
       const key = btn.getAttribute('data-key');
       await toggleEntryPageBreak(key);
+    };
+  });
+
+  main.querySelectorAll('.page-mode-btn').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const key = btn.getAttribute('data-key');
+      const mode = btn.getAttribute('data-mode');
+      const entry = state.currentEntries.find(e=>e.key===key);
+      if(entry) entry.pageMode = mode;
+      await updateEntry(state.currentReportId, key, {pageMode: mode});
+      renderReportBody();
+    };
+  });
+
+  main.querySelectorAll('.page-text-input').forEach(ta=>{
+    let debounceTimer = null;
+    ta.oninput = ()=>{
+      const key = ta.getAttribute('data-key');
+      const entry = state.currentEntries.find(e=>e.key===key);
+      if(entry) entry.pageText = ta.value;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(()=>{
+        updateEntry(state.currentReportId, key, {pageText: ta.value}).catch(e=>console.error(e));
+      }, 500);
     };
   });
 
