@@ -658,10 +658,10 @@ async function buildPDFDoc(reportId){
       const areaH = areaBottom - areaTop;
       const labelH = 22, labelGap = 8;
 
-      // Grid: 1 photo -> 1x1; 2 -> 1x2; 3-4 -> 2x2 (2 cols)
-      const cols = chunk.length <= 1 ? 1 : 2;
+      // Grid: 1 -> 1x1; 2 -> 1x2 (uma linha); 3 -> 1x3 (uma linha); 4 -> 2x2
+      const cols = chunk.length === 4 ? 2 : chunk.length;
       const rows = Math.ceil(chunk.length / cols);
-      const gap = 16;
+      const gap = 10;
       const cellW = (PW - 80 - gap*(cols-1)) / cols;
       const cellH = (areaH - gap*(rows-1)) / rows;
       const maxImgH = cellH - labelH - labelGap;
