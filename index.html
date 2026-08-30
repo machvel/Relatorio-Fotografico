@@ -1041,18 +1041,20 @@ function renderAdminAccess(){
 
 function renderHome(){
   app.innerHTML = `
-    <header class="topbar">
+    <header class="topbar" style="position:relative;">
       <div class="stripe"></div>
       <div>
         <h1>Registro Fotográfico</h1>
         <div class="sub">Relatórios semanais de atividades</div>
       </div>
+      <button id="btn-goto-admin" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:20px;padding:8px;cursor:pointer;">☰</button>
     </header>
     <main id="main"></main>
     <div class="fab-bar"><div class="fab-bar-inner">
       <button class="btn btn-primary" id="btn-new">+ Novo relatório semanal</button>
     </div></div>
   `;
+  document.getElementById('btn-goto-admin').onclick = goToAdminLogin;
   document.getElementById('btn-new').onclick = ()=>{ state.screen='new'; render(); };
   const main = document.getElementById('main');
   main.innerHTML = `<div class="empty"><div class="big">⏳</div>Carregando relatórios…</div>`;
