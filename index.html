@@ -839,14 +839,20 @@ function render(){
   if(state.screen === 'move-task-report') return renderMoveTaskReport();
 }
 
+function goToAdminLogin(){
+  state.screen = localStorage.getItem('adminAuthed') === '1' ? 'admin-access' : 'admin-login';
+  render();
+}
+
 function renderAccessRequest(){
   app.innerHTML = `
-    <header class="topbar">
+    <header class="topbar" style="position:relative;">
       <div class="stripe"></div>
       <div>
         <h1>Registro Fotográfico</h1>
         <div class="sub">Acesso restrito</div>
       </div>
+      <button id="btn-goto-admin" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:20px;padding:8px;cursor:pointer;">☰</button>
     </header>
     <main>
       <div class="card">
@@ -860,6 +866,7 @@ function renderAccessRequest(){
       </div>
     </main>
   `;
+  document.getElementById('btn-goto-admin').onclick = goToAdminLogin;
   document.getElementById('btn-request-access').onclick = async ()=>{
     const name = document.getElementById('f-request-name').value.trim();
     if(!name){ showToast('Informe seu nome.'); return; }
@@ -881,12 +888,13 @@ function renderAccessRequest(){
 function renderAccessPending(){
   const name = localStorage.getItem('accessRequestName') || '';
   app.innerHTML = `
-    <header class="topbar">
+    <header class="topbar" style="position:relative;">
       <div class="stripe"></div>
       <div>
         <h1>Registro Fotográfico</h1>
         <div class="sub">Acesso restrito</div>
       </div>
+      <button id="btn-goto-admin" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:20px;padding:8px;cursor:pointer;">☰</button>
     </header>
     <main>
       <div class="empty">
@@ -899,6 +907,10 @@ function renderAccessPending(){
       </div>
     </main>
   `;
+  document.getElementById('btn-goto-admin').onclick = ()=>{
+    if(state.accessPollTimer){ clearInterval(state.accessPollTimer); state.accessPollTimer = null; }
+    goToAdminLogin();
+  };
   document.getElementById('btn-check-access').onclick = ()=> checkAccessStatus(true);
 
   if(state.accessPollTimer) clearInterval(state.accessPollTimer);
