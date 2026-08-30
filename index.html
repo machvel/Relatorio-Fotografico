@@ -210,6 +210,8 @@
 <input type="file" id="camera-input" accept="image/*" multiple>
 
 <script>
+const ADMIN_PASSWORD = 'Tainav';
+
 const state = {
   screen: 'home',        // home | new | report | add
   reports: [],
@@ -393,6 +395,31 @@ async function deleteReport(id){
   const batchDeletes = entriesSnap.docs.map(d => d.ref.delete());
   await Promise.all(batchDeletes);
   await db.collection('reports').doc(id).delete();
+}
+
+// ---------- Access requests ----------
+
+async function submitAccessRequest(name){
+  const ref = await db.collection('accessRequests').add({
+    name, status: 'pending', requestedAt: Date.now()
+  });
+  return ref.id;
+}
+
+async function getAccessRequest(id){
+  const docSnap = await db.collection('accessRequests').doc(id).get();
+  return docSnap.exists ? { id: docSnap.id, ...docSnap.data() } : null;
+}
+
+async function fetchAllAccessRequests(){
+  const snap = await db.collection('accessRequests').get();
+  const list = snap.docs.map(d=>({ id: d.id, ...d.data() }));
+  list.sort((a,b)=> (b.requestedAt||0) - (a.requestedAt||0));
+  return list;
+}
+
+async function setAccessRequestStatus(id, status){
+  await db.collection('accessRequests').doc(id).update({ status });
 }
 
 async function fetchHeader(id){
@@ -798,6 +825,11 @@ async function showPdfPreview(reportId){
 const app = document.getElementById('app');
 
 function render(){
+  if(state.screen === 'access-request') return renderAccessRequest();
+  if(state.screen === 'access-pending') return renderAccessPending();
+  if(state.screen === 'access-denied') return renderAccessDenied();
+  if(state.screen === 'admin-login') return renderAdminLogin();
+  if(state.screen === 'admin-access') return renderAdminAccess();
   if(state.screen === 'home') return renderHome();
   if(state.screen === 'new') return renderNew();
   if(state.screen === 'edit-header') return renderEditHeader();
@@ -805,6 +837,194 @@ function render(){
   if(state.screen === 'add') return renderAdd();
   if(state.screen === 'edit-entry') return renderEditEntry();
   if(state.screen === 'move-task-report') return renderMoveTaskReport();
+}
+
+function renderAccessRequest(){
+  app.innerHTML = `
+    <header class="topbar">
+      <div class="stripe"></div>
+      <div>
+        <h1>Registro Fotográfico</h1>
+        <div class="sub">Acesso restrito</div>
+      </div>
+    </header>
+    <main>
+      <div class="card">
+        <h2>Solicitar acesso</h2>
+        <div class="hint" style="margin-bottom:10px;">Esse app é de uso restrito à equipe. Informe seu nome para pedir acesso.</div>
+        <label>Seu nome</label>
+        <input type="text" id="f-request-name" placeholder="Ex: João Silva">
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-request-access">Solicitar acesso</button>
+        </div>
+      </div>
+    </main>
+  `;
+  document.getElementById('btn-request-access').onclick = async ()=>{
+    const name = document.getElementById('f-request-name').value.trim();
+    if(!name){ showToast('Informe seu nome.'); return; }
+    const btn = document.getElementById('btn-request-access');
+    btn.innerHTML = '<span class="spinner"></span> Enviando…'; btn.disabled = true;
+    try{
+      const id = await submitAccessRequest(name);
+      localStorage.setItem('accessRequestId', id);
+      localStorage.setItem('accessRequestName', name);
+      state.screen = 'access-pending';
+      render();
+    }catch(e){
+      console.error(e); showToast('Erro ao enviar solicitação.');
+      btn.innerHTML = 'Solicitar acesso'; btn.disabled = false;
+    }
+  };
+}
+
+function renderAccessPending(){
+  const name = localStorage.getItem('accessRequestName') || '';
+  app.innerHTML = `
+    <header class="topbar">
+      <div class="stripe"></div>
+      <div>
+        <h1>Registro Fotográfico</h1>
+        <div class="sub">Acesso restrito</div>
+      </div>
+    </header>
+    <main>
+      <div class="empty">
+        <div class="big">⏳</div>
+        Solicitação enviada${name ? ` como <b>${escapeHtml(name)}</b>` : ''}.<br>
+        Aguardando aprovação de um administrador.
+      </div>
+      <div class="btn-row" style="margin-top:14px;">
+        <button class="btn btn-ghost" id="btn-check-access">Verificar novamente</button>
+      </div>
+    </main>
+  `;
+  document.getElementById('btn-check-access').onclick = ()=> checkAccessStatus(true);
+
+  if(state.accessPollTimer) clearInterval(state.accessPollTimer);
+  state.accessPollTimer = setInterval(()=> checkAccessStatus(false), 8000);
+}
+
+function renderAccessDenied(){
+  if(state.accessPollTimer){ clearInterval(state.accessPollTimer); state.accessPollTimer = null; }
+  app.innerHTML = `
+    <header class="topbar">
+      <div class="stripe"></div>
+      <div>
+        <h1>Registro Fotográfico</h1>
+        <div class="sub">Acesso restrito</div>
+      </div>
+    </header>
+    <main>
+      <div class="empty">
+        <div class="big">🚫</div>
+        Seu pedido de acesso foi negado.<br>
+        Fale com um administrador se acha que isso é um engano.
+      </div>
+    </main>
+  `;
+}
+
+async function checkAccessStatus(manual){
+  const reqId = localStorage.getItem('accessRequestId');
+  if(!reqId) return;
+  try{
+    const reqDoc = await getAccessRequest(reqId);
+    if(reqDoc && reqDoc.status === 'approved'){
+      if(state.accessPollTimer){ clearInterval(state.accessPollTimer); state.accessPollTimer = null; }
+      localStorage.setItem('accessApproved', '1');
+      state.screen = 'home';
+      await loadAuthorName();
+      render();
+    } else if(reqDoc && reqDoc.status === 'denied'){
+      state.screen = 'access-denied';
+      render();
+    } else if(manual){
+      showToast('Ainda aguardando aprovação.');
+    }
+  }catch(e){ console.error(e); if(manual) showToast('Erro ao verificar.'); }
+}
+
+function renderAdminLogin(){
+  app.innerHTML = `
+    <header class="topbar">
+      <div class="stripe"></div>
+      <div>
+        <h1>Painel de admin</h1>
+        <div class="sub">Área restrita</div>
+      </div>
+    </header>
+    <main>
+      <div class="card">
+        <label>Senha de administrador</label>
+        <input type="password" id="f-admin-pass" placeholder="Digite a senha">
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-admin-login">Entrar</button>
+        </div>
+      </div>
+    </main>
+  `;
+  const input = document.getElementById('f-admin-pass');
+  const tryLogin = ()=>{
+    if(input.value === ADMIN_PASSWORD){
+      localStorage.setItem('adminAuthed', '1');
+      state.screen = 'admin-access';
+      render();
+    } else {
+      showToast('Senha incorreta.');
+    }
+  };
+  document.getElementById('btn-admin-login').onclick = tryLogin;
+  input.onkeydown = (e)=>{ if(e.key === 'Enter') tryLogin(); };
+  input.focus();
+}
+
+function renderAdminAccess(){
+  app.innerHTML = `
+    <header class="topbar">
+      <div class="stripe"></div>
+      <div>
+        <h1>Aprovações de acesso</h1>
+        <div class="sub">Painel do administrador</div>
+      </div>
+    </header>
+    <main id="main"></main>
+  `;
+  const main = document.getElementById('main');
+  main.innerHTML = `<div class="empty"><div class="big">⏳</div>Carregando pedidos…</div>`;
+  fetchAllAccessRequests().then(list=>{
+    if(list.length === 0){
+      main.innerHTML = `<div class="empty"><div class="big">📭</div>Nenhum pedido de acesso ainda.</div>`;
+      return;
+    }
+    const statusLabel = { pending: 'Pendente', approved: 'Aprovado', denied: 'Negado' };
+    const statusColor = { pending: 'var(--orange)', approved: '#1E7B4D', denied: 'var(--danger)' };
+    main.innerHTML = `<div class="card">` + list.map(r=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14px;color:var(--navy);">${escapeHtml(r.name||'(sem nome)')}</div>
+          <div style="font-size:11.5px;color:${statusColor[r.status]||'var(--muted)'};font-weight:700;">${statusLabel[r.status]||r.status}</div>
+        </div>
+        ${r.status !== 'approved' ? `<button class="btn-sm btn-ghost approve-req" data-id="${r.id}" style="padding:6px 10px;">Aprovar</button>` : ''}
+        ${r.status !== 'denied' ? `<button class="btn-sm btn-danger-ghost deny-req" data-id="${r.id}" style="padding:6px 10px;">${r.status === 'approved' ? 'Revogar acesso' : 'Negar'}</button>` : ''}
+      </div>
+    `).join('') + `</div>`;
+
+    main.querySelectorAll('.approve-req').forEach(btn=>{
+      btn.onclick = async ()=>{
+        btn.disabled = true;
+        try{ await setAccessRequestStatus(btn.getAttribute('data-id'), 'approved'); showToast('Acesso aprovado!'); renderAdminAccess(); }
+        catch(e){ console.error(e); showToast('Erro ao aprovar.'); btn.disabled = false; }
+      };
+    });
+    main.querySelectorAll('.deny-req').forEach(btn=>{
+      btn.onclick = async ()=>{
+        btn.disabled = true;
+        try{ await setAccessRequestStatus(btn.getAttribute('data-id'), 'denied'); showToast('Acesso negado.'); renderAdminAccess(); }
+        catch(e){ console.error(e); showToast('Erro ao negar.'); btn.disabled = false; }
+      };
+    });
+  });
 }
 
 function renderHome(){
@@ -1645,7 +1865,58 @@ window.addEventListener('offline', updateOnlineStatus);
 updateOnlineStatus();
 
 // ---------- Init ----------
-loadAuthorName().then(render);
+async function init(){
+  const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
+  if(isAdmin){
+    const adminAuthed = localStorage.getItem('adminAuthed') === '1';
+    state.screen = adminAuthed ? 'admin-access' : 'admin-login';
+    await loadAuthorName();
+    render();
+    return;
+  }
+
+  const wasApproved = localStorage.getItem('accessApproved') === '1';
+  const reqId = localStorage.getItem('accessRequestId');
+
+  if(reqId){
+    try{
+      const reqDoc = await getAccessRequest(reqId);
+      if(reqDoc && reqDoc.status === 'approved'){
+        localStorage.setItem('accessApproved', '1');
+        await loadAuthorName();
+        render();
+        return;
+      }
+      if(reqDoc && reqDoc.status === 'denied'){
+        localStorage.removeItem('accessApproved');
+        state.screen = 'access-denied';
+        render();
+        return;
+      }
+      // status is pending (or the request no longer exists)
+      localStorage.removeItem('accessApproved');
+      state.screen = 'access-pending';
+      render();
+      return;
+    }catch(e){
+      console.error('Erro ao verificar acesso (provavelmente offline)', e);
+      // Offline: fall back to the last known status instead of locking the person out.
+      if(wasApproved){
+        await loadAuthorName();
+        render();
+        return;
+      }
+      state.screen = 'access-pending';
+      render();
+      return;
+    }
+  }
+
+  state.screen = 'access-request';
+  render();
+}
+init();
+
 </script>
 </body>
 </html>
