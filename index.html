@@ -994,7 +994,7 @@ function renderAdminLogin(){
 function renderAdminAccess(){
   app.innerHTML = `
     <header class="topbar">
-      <div class="stripe"></div>
+      <button class="back" id="btn-back-admin">←</button>
       <div>
         <h1>Aprovações de acesso</h1>
         <div class="sub">Painel do administrador</div>
@@ -1002,6 +1002,7 @@ function renderAdminAccess(){
     </header>
     <main id="main"></main>
   `;
+  document.getElementById('btn-back-admin').onclick = ()=>{ state.screen = 'home'; render(); };
   const main = document.getElementById('main');
   main.innerHTML = `<div class="empty"><div class="big">⏳</div>Carregando pedidos…</div>`;
   fetchAllAccessRequests().then(list=>{
