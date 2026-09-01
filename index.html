@@ -711,6 +711,8 @@ async function buildPDFDoc(reportId){
             const ix = cellX + (cellW-iw)/2;
             const iy = cellY + (cellH-ih)/2;
             doc.addImage(entry.photo, 'JPEG', ix, iy, iw, ih);
+            doc.setDrawColor(138,149,168); doc.setLineWidth(0.75);
+            doc.rect(ix, iy, iw, ih);
           }catch(err){ console.error('img err', err); }
         });
 
@@ -752,6 +754,8 @@ async function buildPDFDoc(reportId){
             const blockTop = cellY + (cellH-blockH)/2;
             const ix = cellX + (cellW-iw)/2;
             doc.addImage(entry.photo, 'JPEG', ix, blockTop, iw, ih);
+            doc.setDrawColor(138,149,168); doc.setLineWidth(0.75);
+            doc.rect(ix, blockTop, iw, ih);
 
             doc.setDrawColor(...blue); doc.setLineWidth(1);
             const lines = wrappedLabels[idx];
