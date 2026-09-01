@@ -673,12 +673,17 @@ async function buildPDFDoc(reportId){
       doc.line(40, 66, PW-60, 66);
 
       // task box
+      doc.setFont('helvetica','bold'); doc.setFontSize(13);
+      const maxTaskTextW = PW - 100 - 24;
+      const taskLines = doc.splitTextToSize(task || '(sem título)', maxTaskTextW);
+      const taskLineH = 16;
+      const boxPadV = 14;
+      const boxH = taskLines.length*taskLineH + boxPadV*2;
       doc.setDrawColor(...blue); doc.setLineWidth(1);
-      const taskLines = doc.splitTextToSize(task || '(sem título)', PW-140);
-      const boxH = 24 + taskLines.length*16;
       doc.rect(40, 78, PW-100, boxH);
-      doc.setTextColor(20,20,20); doc.setFont('helvetica','bold'); doc.setFontSize(13);
-      doc.text(taskLines, PW/2, 78+20, {align:'center'});
+      doc.setTextColor(20,20,20);
+      const taskTextY = 78 + boxPadV + taskLineH*0.72;
+      doc.text(taskLines, PW/2, taskTextY, {align:'center'});
 
       const areaTop = 78 + boxH + 8;
       const areaBottom = PH - 20;
@@ -711,7 +716,7 @@ async function buildPDFDoc(reportId){
             const ix = cellX + (cellW-iw)/2;
             const iy = cellY + (cellH-ih)/2;
             doc.addImage(entry.photo, 'JPEG', ix, iy, iw, ih);
-            doc.setDrawColor(138,149,168); doc.setLineWidth(0.75);
+            doc.setDrawColor(107,124,148); doc.setLineWidth(2);
             doc.rect(ix, iy, iw, ih);
           }catch(err){ console.error('img err', err); }
         });
@@ -754,7 +759,7 @@ async function buildPDFDoc(reportId){
             const blockTop = cellY + (cellH-blockH)/2;
             const ix = cellX + (cellW-iw)/2;
             doc.addImage(entry.photo, 'JPEG', ix, blockTop, iw, ih);
-            doc.setDrawColor(138,149,168); doc.setLineWidth(0.75);
+            doc.setDrawColor(107,124,148); doc.setLineWidth(2);
             doc.rect(ix, blockTop, iw, ih);
 
             doc.setDrawColor(...blue); doc.setLineWidth(1);
