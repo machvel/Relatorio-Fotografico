@@ -535,6 +535,8 @@ async function buildPDFDoc(reportId){
   const doc = new jsPDF({orientation:'landscape', unit:'pt', format:[780,540]});
   const PW = 780, PH = 540;
   const navy = [31,56,100], blue = [68,114,196], orange=[237,125,49], muted=[91,100,114];
+  const sidebarNavy = [61,81,133], sidebarOrange = [255,102,0];
+  const sidebarX = 761, sidebarW = 12, sidebarTop = PH*0.023, sidebarBottom = PH*0.974;
 
   function drawPageTexture(){
     doc.setDrawColor(242,242,244); doc.setLineWidth(0.5);
@@ -543,13 +545,30 @@ async function buildPDFDoc(reportId){
     }
   }
 
+  // Cover page sidebar: navy on top (~70%), orange below.
+  function drawSidebarCover(){
+    const splitY = sidebarTop + (sidebarBottom-sidebarTop)*0.697;
+    doc.setDrawColor(...sidebarNavy); doc.setLineWidth(sidebarW);
+    doc.line(sidebarX, sidebarTop, sidebarX, splitY);
+    doc.setDrawColor(...sidebarOrange); doc.setLineWidth(sidebarW);
+    doc.line(sidebarX, splitY, sidebarX, sidebarBottom);
+  }
+  // Content pages sidebar: orange on top (~21%), navy below.
+  function drawSidebarContent(){
+    const splitY = sidebarTop + (sidebarBottom-sidebarTop)*0.212;
+    doc.setDrawColor(...sidebarOrange); doc.setLineWidth(sidebarW);
+    doc.line(sidebarX, sidebarTop, sidebarX, splitY);
+    doc.setDrawColor(...sidebarNavy); doc.setLineWidth(sidebarW);
+    doc.line(sidebarX, splitY, sidebarX, sidebarBottom);
+  }
+
   const reportTitle = header.tituloRelatorio !== undefined ? header.tituloRelatorio.trim() : 'Relatório Fotográfico';
 
   // Cover page
   drawPageTexture();
   doc.setDrawColor(...blue); doc.setLineWidth(2);
   doc.rect(50, 40, PW-100, 100);
-  doc.setTextColor(...navy);
+  doc.setTextColor(20,20,20);
   doc.setFont('helvetica','bold'); doc.setFontSize(20);
   const coverTitleLines = doc.splitTextToSize(reportTitle, PW-160);
   doc.text(coverTitleLines, PW/2, coverTitleLines.length>1 ? 72 : 85, {align:'center'});
@@ -576,8 +595,7 @@ async function buildPDFDoc(reportId){
     doc.text(valLines, 280, ry+5);
     ry += rowH;
   });
-  doc.setDrawColor(...orange); doc.setLineWidth(10);
-  doc.line(PW-6, 0, PW-6, PH);
+  drawSidebarCover();
 
   // Page 2: Colaboradores
   doc.addPage([780,540], 'landscape');
@@ -605,8 +623,7 @@ async function buildPDFDoc(reportId){
       doc.text(name, listX+22, by);
     });
   }
-  doc.setDrawColor(...orange); doc.setLineWidth(10);
-  doc.line(PW-6, 0, PW-6, PH);
+  drawSidebarContent();
 
   // group entries by task, preserving first-seen order; within task order Antes/Durante/Depois then time
   const order = {Antes:0, Durante:1, Depois:2};
@@ -645,8 +662,7 @@ async function buildPDFDoc(reportId){
       const lines = doc.splitTextToSize(task || '(sem título)', listW-24);
       const blockH = lines.length*20 + 12;
       if(ty + blockH > maxY){
-        doc.setDrawColor(...orange); doc.setLineWidth(10);
-        doc.line(PW-6, 0, PW-6, PH);
+        drawSidebarContent();
         drawTaskListPageHeader(true);
         ty = 130;
       }
@@ -658,8 +674,7 @@ async function buildPDFDoc(reportId){
       ty += blockH;
     });
   }
-  doc.setDrawColor(...orange); doc.setLineWidth(10);
-  doc.line(PW-6, 0, PW-6, PH);
+  drawSidebarContent();
 
   const maxPhotosPerSlide = Math.min(4, Math.max(1, header.photosPerSlide || 2));
 
@@ -793,11 +808,8 @@ async function buildPDFDoc(reportId){
         });
       }
 
-      // sidebar stripes (echo template branding)
-      doc.setDrawColor(...orange); doc.setLineWidth(10);
-      doc.line(PW-6, 0, PW-6, PH*0.18);
-      doc.setDrawColor(...navy); doc.setLineWidth(10);
-      doc.line(PW-6, PH*0.18, PW-6, PH);
+      // sidebar stripes (matching original template exactly)
+      drawSidebarContent();
 
       const authors = [...new Set(chunk.map(e=>e.author).filter(Boolean))];
       if(authors.length){
