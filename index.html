@@ -536,14 +536,23 @@ async function buildPDFDoc(reportId){
   const PW = 780, PH = 540;
   const navy = [31,56,100], blue = [68,114,196], orange=[237,125,49], muted=[91,100,114];
 
+  function drawPageTexture(){
+    doc.setDrawColor(242,242,244); doc.setLineWidth(0.5);
+    for(let y=0; y<PH; y+=4){
+      doc.line(0, y, PW, y);
+    }
+  }
+
+  const reportTitle = header.tituloRelatorio !== undefined ? header.tituloRelatorio.trim() : 'Relatório Fotográfico';
+
   // Cover page
+  drawPageTexture();
   doc.setDrawColor(...blue); doc.setLineWidth(2);
   doc.rect(50, 40, PW-100, 100);
   doc.setTextColor(...navy);
   doc.setFont('helvetica','bold'); doc.setFontSize(20);
-  doc.text('Relatório Semanal de Atividades', PW/2, 78, {align:'center'});
-  doc.setFontSize(14);
-  doc.text('Registro Fotográfico', PW/2, 105, {align:'center'});
+  const coverTitleLines = doc.splitTextToSize(reportTitle, PW-160);
+  doc.text(coverTitleLines, PW/2, coverTitleLines.length>1 ? 72 : 85, {align:'center'});
 
   const rows = [
     ['Embarcação:', header.embarcacao||'-'],
@@ -572,6 +581,7 @@ async function buildPDFDoc(reportId){
 
   // Page 2: Colaboradores
   doc.addPage([780,540], 'landscape');
+  drawPageTexture();
   doc.setDrawColor(...blue); doc.setLineWidth(2);
   doc.rect(50, 40, PW-100, 60);
   doc.setTextColor(...navy);
@@ -612,6 +622,7 @@ async function buildPDFDoc(reportId){
   // Page 3+: Tarefas realizadas (com quebra automática de página)
   function drawTaskListPageHeader(isContinuation){
     doc.addPage([780,540], 'landscape');
+    drawPageTexture();
     doc.setDrawColor(...blue); doc.setLineWidth(2);
     doc.rect(50, 40, PW-100, 60);
     doc.setTextColor(...navy);
@@ -670,6 +681,7 @@ async function buildPDFDoc(reportId){
     const taskEntries = byTask[task];
     for(const chunk of chunkTaskEntries(taskEntries)){
       doc.addPage([780,540], 'landscape');
+      drawPageTexture();
       // title
       doc.setTextColor(...blue);
       doc.setFont('helvetica','normal'); doc.setFontSize(26);
@@ -721,7 +733,7 @@ async function buildPDFDoc(reportId){
             const ix = cellX + (cellW-iw)/2;
             const iy = cellY + (cellH-ih)/2;
             doc.addImage(entry.photo, 'JPEG', ix, iy, iw, ih);
-            doc.setDrawColor(107,124,148); doc.setLineWidth(2);
+            doc.setDrawColor(122,155,196); doc.setLineWidth(0.75);
             doc.rect(ix, iy, iw, ih);
           }catch(err){ console.error('img err', err); }
         });
@@ -764,7 +776,7 @@ async function buildPDFDoc(reportId){
             const blockTop = cellY + (cellH-blockH)/2;
             const ix = cellX + (cellW-iw)/2;
             doc.addImage(entry.photo, 'JPEG', ix, blockTop, iw, ih);
-            doc.setDrawColor(107,124,148); doc.setLineWidth(2);
+            doc.setDrawColor(122,155,196); doc.setLineWidth(0.75);
             doc.rect(ix, blockTop, iw, ih);
 
             doc.setDrawColor(...blue); doc.setLineWidth(1);
@@ -1161,6 +1173,9 @@ function renderHeaderForm(mode){
     </header>
     <main>
       <div class="card">
+        <label>Título do relatório (capa)</label>
+        <input type="text" id="f-titulo" placeholder="Ex: Relatório Fotográfico" value="${escapeHtml(h.tituloRelatorio !== undefined ? h.tituloRelatorio : 'Relatório Fotográfico')}">
+        <div class="hint">Esse texto aparece na primeira página do PDF. Pode apagar ou trocar como quiser.</div>
         <label>Embarcação</label>
         <input type="text" id="f-embarcacao" placeholder="Ex: Bram Power" value="${escapeHtml(h.embarcacao||'')}">
         <label>Turma</label>
@@ -1239,6 +1254,7 @@ function renderHeaderForm(mode){
   document.getElementById('btn-save-header').onclick = async ()=>{
     if(!selectedSetor){ showToast('Selecione o setor.'); return; }
     const data = {
+      tituloRelatorio: document.getElementById('f-titulo').value.trim(),
       embarcacao: document.getElementById('f-embarcacao').value.trim(),
       turma: document.getElementById('f-turma').value.trim(),
       cmtcfm: document.getElementById('f-cmtcfm').value.trim(),
