@@ -1160,12 +1160,8 @@ function renderHome(){
       let out = '';
       tituloOrder.forEach(titulo=>{
         out += `<div style="font-weight:600;font-size:13.5px;color:var(--blue);margin:10px 0 6px;padding-left:2px;">${escapeHtml(titulo)}</div>`;
-        // Level 3: por dia (período), mais recentes primeiro
-        const sorted = [...byTitulo[titulo]].sort((a,b)=>{
-          const pa = (a.header.periodo||''), pb = (b.header.periodo||'');
-          if(pa !== pb) return pb.localeCompare(pa, 'pt-BR');
-          return (b.header.criadoEm||0) - (a.header.criadoEm||0);
-        });
+        // Level 3: mais novo para o mais antigo, pela data real de criação do relatório
+        const sorted = [...byTitulo[titulo]].sort((a,b)=> (b.header.criadoEm||0) - (a.header.criadoEm||0));
         out += sorted.map(reportItemHtml).join('');
       });
       return out;
