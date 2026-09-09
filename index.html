@@ -1135,44 +1135,51 @@ function renderHome(){
       return;
     }
 
-    // Level 1: título do relatório
-    const byTitulo = {};
-    const tituloOrder = [];
+    // Level 1: setor (departamento)
+    const bySetorTop = {};
+    setorOrder.forEach(s=> bySetorTop[s] = []);
+    const outrosTop = [];
     reports.forEach(r=>{
-      const t = (r.header.tituloRelatorio || 'Relatório Fotográfico').trim() || 'Relatório Fotográfico';
-      if(!byTitulo[t]){ byTitulo[t] = []; tituloOrder.push(t); }
-      byTitulo[t].push(r);
+      const s = r.header.setor;
+      if(s && bySetorTop[s]) bySetorTop[s].push(r);
+      else outrosTop.push(r);
     });
-    tituloOrder.sort((a,b)=> a.localeCompare(b, 'pt-BR'));
 
     let html = '';
-    tituloOrder.forEach(titulo=>{
-      html += `<div style="font-weight:700;font-size:15px;color:var(--navy);margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--blue);">${escapeHtml(titulo)}</div>`;
-
-      // Level 2: setor (departamento)
-      const bySetor = {};
-      setorOrder.forEach(s=> bySetor[s] = []);
-      const outros = [];
-      byTitulo[titulo].forEach(r=>{
-        const s = r.header.setor;
-        if(s && bySetor[s]) bySetor[s].push(r);
-        else outros.push(r);
+    const renderTituloGroup = (list)=>{
+      // Level 2: título do relatório
+      const byTitulo = {};
+      const tituloOrder = [];
+      list.forEach(r=>{
+        const t = (r.header.tituloRelatorio || 'Relatório Fotográfico').trim() || 'Relatório Fotográfico';
+        if(!byTitulo[t]){ byTitulo[t] = []; tituloOrder.push(t); }
+        byTitulo[t].push(r);
       });
+      tituloOrder.sort((a,b)=> a.localeCompare(b, 'pt-BR'));
 
-      const renderSetorGroup = (setorLabel, list)=>{
-        if(list.length === 0) return '';
+      let out = '';
+      tituloOrder.forEach(titulo=>{
+        out += `<div style="font-weight:600;font-size:13.5px;color:var(--blue);margin:10px 0 6px;padding-left:2px;">${escapeHtml(titulo)}</div>`;
         // Level 3: por dia (período), mais recentes primeiro
-        const sorted = [...list].sort((a,b)=>{
+        const sorted = [...byTitulo[titulo]].sort((a,b)=>{
           const pa = (a.header.periodo||''), pb = (b.header.periodo||'');
           if(pa !== pb) return pb.localeCompare(pa, 'pt-BR');
           return (b.header.criadoEm||0) - (a.header.criadoEm||0);
         });
-        return `<div class="task-group-title" style="margin-top:4px;">${escapeHtml(setorLabel)}</div>` + sorted.map(reportItemHtml).join('');
-      };
+        out += sorted.map(reportItemHtml).join('');
+      });
+      return out;
+    };
 
-      setorOrder.forEach(setor=>{ html += renderSetorGroup(setor, bySetor[setor]); });
-      html += renderSetorGroup('Outros', outros);
+    setorOrder.forEach(setor=>{
+      if(bySetorTop[setor].length === 0) return;
+      html += `<div style="font-weight:700;font-size:15px;color:var(--navy);margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--blue);">${escapeHtml(setor)}</div>`;
+      html += renderTituloGroup(bySetorTop[setor]);
     });
+    if(outrosTop.length > 0){
+      html += `<div style="font-weight:700;font-size:15px;color:var(--navy);margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--blue);">Outros</div>`;
+      html += renderTituloGroup(outrosTop);
+    }
 
     html += `<div style="text-align:center;font-size:10.5px;color:var(--muted);margin-top:24px;padding-bottom:8px;">© 2026 Bram Power · uso interno</div>`;
     main.innerHTML = html;
