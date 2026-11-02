@@ -473,14 +473,165 @@ async function addEntry(reportId, entry){
   await db.collection('reports').doc(reportId).collection('entries').doc(entryId).set(entry);
 }
 
-async function addTextPage(reportId, pageTitle, pageBody){
+async function addTextPage(reportId, pageTitle, pageBody, pageRich){
   const taskId = `txt-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
   await addEntry(reportId, {
-    task: taskId, isTextPage: true, pageTitle, pageBody,
+    task: taskId, isTextPage: true, pageTitle, pageBody, pageRich: pageRich || '',
     phase: null, phaseText: '', author: '', photo: null, w: 0, h: 0,
     ts: Date.now()
   });
   return taskId;
+}
+
+// ---------- Texto formatado (negrito, itálico, sublinhado, fonte, cor) ----------
+const RTE_DEFAULT_COLOR = '#141414';
+function rteNormColor(c){
+  try{
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.fillStyle = '#000000'; ctx.fillStyle = c;
+    let v = ctx.fillStyle;
+    if(/^#[0-9a-f]{6}$/i.test(v)) return v.toLowerCase();
+    const m = v.match(/(\d+)[,\s]+(\d+)[,\s]+(\d+)/);
+    if(m) return '#' + [m[1],m[2],m[3]].map(n=>(+n).toString(16).padStart(2,'0')).join('');
+  }catch(e){}
+  return null;
+}
+function rteFontKey(f){
+  f = (f||'').toLowerCase();
+  if(f.includes('courier') || f.includes('mono')) return 'courier';
+  if(f.includes('times')) return 'times';
+  if(f.includes('arial') || f.includes('helvetica') || f.includes('sans')) return 'helvetica';
+  if(f.includes('serif')) return 'times';
+  return null;
+}
+function richFromEditor(root){
+  const runs = [];
+  const sameStyle = (a,b)=> !!a.b===!!b.b && !!a.i===!!b.i && !!a.u===!!b.u && (a.c||'')===(b.c||'') && (a.f||'')===(b.f||'');
+  const push = (t, st)=>{
+    if(!t) return;
+    const l = runs[runs.length-1];
+    if(l && sameStyle(l, st)) l.t += t; else runs.push(Object.assign({t}, st));
+  };
+  const endsNL = ()=>{ const l = runs[runs.length-1]; return !l || l.t.endsWith('\n'); };
+  const walk = (node, st)=>{
+    if(node.nodeType === 3){ push(node.nodeValue.replace(/ /g,' ').replace(/\n/g,' '), st); return; }
+    if(node.nodeType !== 1) return;
+    const tag = node.tagName;
+    if(tag === 'BR'){ push('\n', st); return; }
+    const s = Object.assign({}, st);
+    if(tag==='B' || tag==='STRONG') s.b = 1;
+    if(tag==='I' || tag==='EM') s.i = 1;
+    if(tag==='U') s.u = 1;
+    if(tag==='FONT'){
+      if(node.getAttribute('color')){ const c = rteNormColor(node.getAttribute('color')); if(c) s.c = c; }
+      if(node.getAttribute('face')){ const f = rteFontKey(node.getAttribute('face')); if(f) s.f = f; }
+    }
+    const stl = node.style;
+    if(stl){
+      if(stl.fontWeight==='bold' || +stl.fontWeight >= 600) s.b = 1;
+      if(stl.fontStyle==='italic') s.i = 1;
+      if(((stl.textDecorationLine||'') + (stl.textDecoration||'')).includes('underline')) s.u = 1;
+      if(stl.color){ const c = rteNormColor(stl.color); if(c) s.c = c; }
+      if(stl.fontFamily){ const f = rteFontKey(stl.fontFamily); if(f) s.f = f; }
+    }
+    const block = (tag==='DIV' || tag==='P' || tag==='LI');
+    if(block && !endsNL()) push('\n', st);
+    node.childNodes.forEach(ch=>walk(ch, s));
+    if(block && !endsNL()) push('\n', st);
+  };
+  root.childNodes.forEach(ch=>walk(ch, {}));
+  // remove espaços/quebras no fim
+  while(runs.length){
+    const l = runs[runs.length-1];
+    l.t = l.t.replace(/\s+$/,'');
+    if(l.t) break; runs.pop();
+  }
+  if(runs.length) runs[0].t = runs[0].t.replace(/^\s+/,'');
+  return runs.filter(r=>r.t);
+}
+function richToHtml(runs){
+  return runs.map(r=>{
+    let css = '';
+    if(r.b) css += 'font-weight:bold;';
+    if(r.i) css += 'font-style:italic;';
+    if(r.u) css += 'text-decoration:underline;';
+    if(r.c) css += 'color:' + r.c + ';';
+    if(r.f) css += 'font-family:' + ({helvetica:'Arial,Helvetica,sans-serif', times:"'Times New Roman',Times,serif", courier:"'Courier New',Courier,monospace"}[r.f]||'inherit') + ';';
+    const h = escapeHtml(r.t).replace(/\n/g,'<br>');
+    return css ? `<span style="${css}">${h}</span>` : h;
+  }).join('');
+}
+function richParse(s){
+  if(!s) return null;
+  try{ const a = JSON.parse(s); return Array.isArray(a) && a.length ? a : null; }catch(e){ return null; }
+}
+// Desenha runs formatados no PDF (quebra de linha automática, sublinhado manual).
+function drawRichRuns(doc, runs, x, y, maxW, lineH, size, bottom, onNewPage){
+  const hex2rgb = h=>{ const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(h||''); return m ? [parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)] : [20,20,20]; };
+  const styleOf = r => (r.b && r.i) ? 'bolditalic' : r.b ? 'bold' : r.i ? 'italic' : 'normal';
+  const famOf = r => r.f || 'helvetica';
+  const key = r => [famOf(r), styleOf(r), r.u?1:0, r.c||''].join('|');
+  doc.setFontSize(size);
+  const measure = (t, r)=>{ doc.setFont(famOf(r), styleOf(r)); return doc.getTextWidth(t); };
+  // quebra em parágrafos
+  const paras = [[]];
+  runs.forEach(r=>{
+    const parts = String(r.t).split('\n');
+    parts.forEach((p, idx)=>{
+      if(idx > 0) paras.push([]);
+      if(p) paras[paras.length-1].push(Object.assign({}, r, {t:p}));
+    });
+  });
+  const lines = [];
+  paras.forEach(p=>{
+    let line = [], w = 0;
+    const flush = ()=>{
+      while(line.length && /^\s+$/.test(line[line.length-1].t)) line.pop();
+      lines.push(line); line = []; w = 0;
+    };
+    p.forEach(r=>{
+      (r.t.match(/\s+|\S+/g) || []).forEach(tok=>{
+        const isSp = /^\s+$/.test(tok);
+        if(isSp && !line.length) return;
+        let tw = measure(tok, r);
+        if(!isSp && w + tw > maxW && line.length){ flush(); }
+        if(!isSp && tw > maxW){
+          let chunk = '';
+          for(const ch of tok){
+            if(measure(chunk + ch, r) > maxW && chunk){ line.push(Object.assign({}, r, {t:chunk, w:measure(chunk,r)})); flush(); chunk = ''; }
+            chunk += ch;
+          }
+          tok = chunk; tw = measure(tok, r);
+        }
+        line.push(Object.assign({}, r, {t:tok, w:tw})); w += tw;
+      });
+    });
+    flush();
+  });
+  const savedDraw = doc.getDrawColor ? doc.getDrawColor() : null;
+  const savedLW = doc.getLineWidth ? doc.getLineWidth() : null;
+  lines.forEach(line=>{
+    if(onNewPage && y > bottom){ y = onNewPage(); }
+    let cx = x, i = 0;
+    while(i < line.length){
+      let seg = line[i], j = i + 1, text = seg.t, wsum = seg.w;
+      while(j < line.length && key(line[j]) === key(seg)){ text += line[j].t; wsum += line[j].w; j++; }
+      const rgb = hex2rgb(seg.c || RTE_DEFAULT_COLOR);
+      doc.setFont(famOf(seg), styleOf(seg)); doc.setFontSize(size);
+      doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+      doc.text(text, cx, y);
+      if(seg.u){
+        doc.setDrawColor(rgb[0], rgb[1], rgb[2]); doc.setLineWidth(0.8);
+        doc.line(cx, y + 2, cx + wsum, y + 2);
+      }
+      cx += wsum; i = j;
+    }
+    y += lineH;
+  });
+  if(savedDraw) doc.setDrawColor(savedDraw);
+  if(savedLW !== null) doc.setLineWidth(savedLW);
+  doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20);
+  return y;
 }
 
 async function deleteEntry(key){
@@ -754,10 +905,15 @@ async function buildPDFDoc(reportId){
       doc.setTextColor(20,20,20);
       const bodyLineH = 19;
       let by = rawTitleLines[1] ? 135 : 105;
-      const bodyLines = doc.splitTextToSize(tp.pageBody || '', PW-80);
-      bodyLines.forEach(line=>{
-        doc.text(line, 40, by);
-        by += bodyLineH;
+      const richRuns = richParse(tp.pageRich) || (tp.pageBody ? [{t: tp.pageBody}] : []);
+      const contTitle = ((tp.pageTitle||'(sem título)') + ' (cont.)').toUpperCase();
+      drawRichRuns(doc, richRuns, 40, by, PW-80, bodyLineH, 13, PH-40, ()=>{
+        drawSidebarContent();
+        doc.addPage([780,540], 'landscape');
+        drawPageTexture();
+        doc.setTextColor(...blue); doc.setFont('helvetica','bold'); doc.setFontSize(26);
+        doc.text(doc.splitTextToSize(contTitle, PW-80)[0] || '', 40, 55);
+        return 105;
       });
 
       drawSidebarContent();
@@ -1562,7 +1718,33 @@ function renderAddTextPage(){
         <label>Título da página</label>
         <input type="text" id="f-page-title" placeholder="Ex: Observações Gerais da Semana" value="${escapeHtml(editing ? editing.pageTitle : '')}">
         <label>Texto</label>
-        <textarea id="f-page-body" placeholder="Escreva o que quiser aqui..." style="width:100%;box-sizing:border-box;min-height:160px;padding:9px 11px;font-size:14px;">${escapeHtml(editing ? editing.pageBody : '')}</textarea>
+        <style>
+          .rte-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 8px;}
+          .rte-bar button,.rte-bar select{height:34px;min-width:34px;border:1px solid #c5d0e0;background:#fff;border-radius:6px;font-size:15px;cursor:pointer;padding:0 8px;}
+          .rte-bar button:hover{background:#eaf1fb;}
+          .rte-bar input[type=color]{width:38px;height:34px;padding:2px;border:1px solid #c5d0e0;border-radius:6px;background:#fff;cursor:pointer;}
+          .rte-sw{width:22px!important;min-width:22px!important;height:22px!important;padding:0!important;border-radius:50%!important;}
+          #f-page-body{width:100%;box-sizing:border-box;min-height:200px;padding:9px 11px;font-size:14px;line-height:1.5;border:1px solid #c5d0e0;border-radius:8px;background:#fff;color:#141414;font-family:Arial,Helvetica,sans-serif;outline:none;overflow-wrap:anywhere;}
+          #f-page-body:focus{border-color:#3f5a8c;}
+          #f-page-body:empty:before{content:attr(data-ph);color:#8a94a6;}
+        </style>
+        <div class="rte-bar" id="rte-bar">
+          <button type="button" data-cmd="bold" title="Negrito"><b>B</b></button>
+          <button type="button" data-cmd="italic" title="Itálico"><i>I</i></button>
+          <button type="button" data-cmd="underline" title="Sublinhado"><u>U</u></button>
+          <select id="rte-font" title="Fonte">
+            <option value="">Fonte</option>
+            <option value="Arial">Arial</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Courier New">Courier New</option>
+          </select>
+          <button type="button" class="rte-sw" data-color="#141414" style="background:#141414" title="Preto"></button>
+          <button type="button" class="rte-sw" data-color="#1f4e9c" style="background:#1f4e9c" title="Azul"></button>
+          <button type="button" class="rte-sw" data-color="#c62828" style="background:#c62828" title="Vermelho"></button>
+          <button type="button" class="rte-sw" data-color="#2e7d32" style="background:#2e7d32" title="Verde"></button>
+          <input type="color" id="rte-color" value="#141414" title="Outra cor">
+        </div>
+        <div id="f-page-body" contenteditable="true" data-ph="Escreva o que quiser aqui..."></div>
         <div class="btn-row">
           <button class="btn btn-primary" id="btn-save-textpage">${editing ? 'Salvar alterações' : 'Adicionar página'}</button>
         </div>
@@ -1572,17 +1754,57 @@ function renderAddTextPage(){
   `;
   document.getElementById('btn-back').onclick = ()=>{ state.editingTextPage=null; state.screen='report'; render(); renderReportBody(); };
 
+  // ----- editor de texto formatado -----
+  const ed = document.getElementById('f-page-body');
+  const initRuns = editing ? richParse(editing.pageRich) : null;
+  if(initRuns) ed.innerHTML = richToHtml(initRuns);
+  else ed.innerHTML = escapeHtml(editing ? (editing.pageBody||'') : '').replace(/\n/g,'<br>');
+  let savedRange = null;
+  document.addEventListener('selectionchange', function onSel(){
+    if(!document.body.contains(ed)){ document.removeEventListener('selectionchange', onSel); return; }
+    const sel = window.getSelection();
+    if(sel.rangeCount && ed.contains(sel.anchorNode)) savedRange = sel.getRangeAt(0).cloneRange();
+  });
+  const restoreSel = ()=>{
+    ed.focus();
+    if(savedRange){ const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange); }
+  };
+  const fmt = (cmd, val)=>{
+    restoreSel();
+    try{ document.execCommand('styleWithCSS', false, true); }catch(e){}
+    document.execCommand(cmd, false, val);
+  };
+  ed.addEventListener('paste', e=>{
+    e.preventDefault();
+    const t = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, t);
+  });
+  document.querySelectorAll('#rte-bar button').forEach(b=>{
+    b.addEventListener('mousedown', e=>e.preventDefault());
+    b.onclick = ()=>{
+      if(b.dataset.cmd) fmt(b.dataset.cmd);
+      else if(b.dataset.color) fmt('foreColor', b.dataset.color);
+    };
+  });
+  document.getElementById('rte-font').onchange = function(){
+    if(this.value) fmt('fontName', this.value);
+    this.value = '';
+  };
+  document.getElementById('rte-color').oninput = function(){ fmt('foreColor', this.value); };
+
   document.getElementById('btn-save-textpage').onclick = async ()=>{
     const title = document.getElementById('f-page-title').value.trim();
-    const body = document.getElementById('f-page-body').value.trim();
+    const runs = richFromEditor(ed);
+    const body = runs.map(r=>r.t).join('').trim();
+    const rich = runs.length ? JSON.stringify(runs) : '';
     if(!title){ showToast('Dê um título para a página.'); return; }
     const btn = document.getElementById('btn-save-textpage');
     btn.innerHTML = '<span class="spinner"></span> Salvando…'; btn.disabled = true;
     try{
       if(editing){
-        await updateEntry(state.currentReportId, editing.key, {pageTitle: title, pageBody: body});
+        await updateEntry(state.currentReportId, editing.key, {pageTitle: title, pageBody: body, pageRich: rich});
       } else {
-        await addTextPage(state.currentReportId, title, body);
+        await addTextPage(state.currentReportId, title, body, rich);
       }
       state.currentEntries = await fetchEntries(state.currentReportId);
       showToast(editing ? 'Página atualizada!' : 'Página adicionada!');
