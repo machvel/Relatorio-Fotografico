@@ -935,27 +935,36 @@ async function buildPDFDoc(reportId){
       doc.addPage([780,540], 'landscape');
       drawPageTexture();
 
-      // Title: same fixed two-line slot used by "LISTA DE ATIVIDADES REALIZADAS".
-      doc.setTextColor(...blue);
-      doc.setFont('helvetica','bold'); doc.setFontSize(26);
-      const rawTitleLines = doc.splitTextToSize((tp.pageTitle||'(sem título)').toUpperCase(), PW-80);
-      doc.text(rawTitleLines[0] || '', 40, 55);
-      if(rawTitleLines[1]) doc.text(rawTitleLines.slice(1).join(' '), 40, 90);
-
-      // Body: manually spaced lines for predictable, consistent alignment.
-      doc.setFont('helvetica','normal'); doc.setFontSize(13);
-      doc.setTextColor(20,20,20);
+      // Cabeçalho igual ao das páginas de fotos: REGISTRO FOTOGRÁFICO, linha e caixa com o título.
+      const drawTextPageHeader = (titleText)=>{
+        doc.setTextColor(...blue);
+        doc.setFont('helvetica','normal'); doc.setFontSize(26);
+        doc.text('REGISTRO FOTOGRÁFICO', 40, 55);
+        doc.setDrawColor(...blue); doc.setLineWidth(1.5);
+        doc.line(40, 66, PW-60, 66);
+        doc.setFont('helvetica','bold'); doc.setFontSize(13);
+        const maxBoxW = PW - 100, boxPadH = 24, maxTextW = maxBoxW - boxPadH;
+        const singleW = doc.getTextWidth(titleText);
+        let tLines, boxW;
+        if(singleW <= maxTextW){ tLines = [titleText]; boxW = Math.max(120, singleW + boxPadH); }
+        else { tLines = doc.splitTextToSize(titleText, maxTextW); boxW = maxBoxW; }
+        const lineH = 16, padV = 14, boxH = tLines.length*lineH + padV*2;
+        doc.setDrawColor(...blue); doc.setLineWidth(1);
+        doc.rect((PW-boxW)/2, 78, boxW, boxH);
+        doc.setTextColor(20,20,20);
+        doc.text(tLines, PW/2, 78 + padV + lineH*0.72, {align:'center'});
+        doc.setFont('helvetica','normal'); doc.setFontSize(13);
+        return 78 + boxH + 30;
+      };
+      const pageTitleText = tp.pageTitle || '(sem título)';
+      const by = drawTextPageHeader(pageTitleText);
       const bodyLineH = 19;
-      let by = rawTitleLines[1] ? 135 : 105;
       const richRuns = richParse(tp.pageRich) || (tp.pageBody ? [{t: tp.pageBody}] : []);
-      const contTitle = ((tp.pageTitle||'(sem título)') + ' (cont.)').toUpperCase();
       drawRichRuns(doc, richRuns, 40, by, PW-80, bodyLineH, 13, PH-40, ()=>{
         drawSidebarContent();
         doc.addPage([780,540], 'landscape');
         drawPageTexture();
-        doc.setTextColor(...blue); doc.setFont('helvetica','bold'); doc.setFontSize(26);
-        doc.text(doc.splitTextToSize(contTitle, PW-80)[0] || '', 40, 55);
-        return 105;
+        return drawTextPageHeader(pageTitleText + ' (cont.)');
       });
 
       drawSidebarContent();
