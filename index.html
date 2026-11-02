@@ -531,7 +531,7 @@ function rteFontKey(f){
 }
 function richFromEditor(root){
   const runs = [];
-  const sameStyle = (a,b)=> !!a.b===!!b.b && !!a.i===!!b.i && !!a.u===!!b.u && (a.c||'')===(b.c||'') && (a.f||'')===(b.f||'');
+  const sameStyle = (a,b)=> !!a.b===!!b.b && !!a.i===!!b.i && !!a.u===!!b.u && (a.c||'')===(b.c||'') && (a.f||'')===(b.f||'') && (a.z||0)===(b.z||0);
   const push = (t, st)=>{
     if(!t) return;
     const l = runs[runs.length-1];
@@ -558,6 +558,7 @@ function richFromEditor(root){
       if(((stl.textDecorationLine||'') + (stl.textDecoration||'')).includes('underline')) s.u = 1;
       if(stl.color){ const c = rteNormColor(stl.color); if(c) s.c = c; }
       if(stl.fontFamily){ const f = rteFontKey(stl.fontFamily); if(f) s.f = f; }
+      if(stl.fontSize && /px$/.test(stl.fontSize)){ const z = Math.round(parseFloat(stl.fontSize) * 13 / 14); if(z >= 6 && z <= 72) s.z = z; }
     }
     const block = (tag==='DIV' || tag==='P' || tag==='LI');
     if(block && !endsNL()) push('\n', st);
@@ -581,6 +582,7 @@ function richToHtml(runs){
     if(r.i) css += 'font-style:italic;';
     if(r.u) css += 'text-decoration:underline;';
     if(r.c) css += 'color:' + r.c + ';';
+    if(r.z) css += 'font-size:' + (r.z * 14 / 13).toFixed(1) + 'px;';
     if(r.f) css += 'font-family:' + ({helvetica:'Arial,Helvetica,sans-serif', times:"'Times New Roman',Times,serif", courier:"'Courier New',Courier,monospace"}[r.f]||'inherit') + ';';
     const h = escapeHtml(r.t).replace(/\n/g,'<br>');
     return css ? `<span style="${css}">${h}</span>` : h;
@@ -595,9 +597,10 @@ function drawRichRuns(doc, runs, x, y, maxW, lineH, size, bottom, onNewPage){
   const hex2rgb = h=>{ const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(h||''); return m ? [parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)] : [20,20,20]; };
   const styleOf = r => (r.b && r.i) ? 'bolditalic' : r.b ? 'bold' : r.i ? 'italic' : 'normal';
   const famOf = r => r.f || 'helvetica';
-  const key = r => [famOf(r), styleOf(r), r.u?1:0, r.c||''].join('|');
+  const szOf = r => r.z || size;
+  const key = r => [famOf(r), styleOf(r), r.u?1:0, r.c||'', szOf(r)].join('|');
   doc.setFontSize(size);
-  const measure = (t, r)=>{ doc.setFont(famOf(r), styleOf(r)); return doc.getTextWidth(t); };
+  const measure = (t, r)=>{ doc.setFont(famOf(r), styleOf(r)); doc.setFontSize(szOf(r)); return doc.getTextWidth(t); };
   // quebra em parágrafos
   const paras = [[]];
   runs.forEach(r=>{
@@ -636,13 +639,16 @@ function drawRichRuns(doc, runs, x, y, maxW, lineH, size, bottom, onNewPage){
   const savedDraw = doc.getDrawColor ? doc.getDrawColor() : null;
   const savedLW = doc.getLineWidth ? doc.getLineWidth() : null;
   lines.forEach(line=>{
-    if(onNewPage && y > bottom){ y = onNewPage(); }
+    const maxSz = line.reduce((m, r)=> Math.max(m, szOf(r)), size);
+    const extra = (maxSz - size) * lineH / size;
+    if(onNewPage && (y + extra) > bottom){ y = onNewPage(); }
+    y += extra;
     let cx = x, i = 0;
     while(i < line.length){
       let seg = line[i], j = i + 1, text = seg.t, wsum = seg.w;
       while(j < line.length && key(line[j]) === key(seg)){ text += line[j].t; wsum += line[j].w; j++; }
       const rgb = hex2rgb(seg.c || RTE_DEFAULT_COLOR);
-      doc.setFont(famOf(seg), styleOf(seg)); doc.setFontSize(size);
+      doc.setFont(famOf(seg), styleOf(seg)); doc.setFontSize(szOf(seg));
       doc.setTextColor(rgb[0], rgb[1], rgb[2]);
       doc.text(text, cx, y);
       if(seg.u){
@@ -1785,6 +1791,10 @@ function renderAddTextPage(){
           <button type="button" data-cmd="bold" title="Negrito"><b>B</b></button>
           <button type="button" data-cmd="italic" title="Itálico"><i>I</i></button>
           <button type="button" data-cmd="underline" title="Sublinhado"><u>U</u></button>
+          <select id="rte-size" title="Tamanho">
+            <option value="">Tamanho</option>
+            ${[10,11,12,13,14,16,18,20,24,28,32].map(n=>`<option value="${n}">${n}${n===13?' (padrão)':''}</option>`).join('')}
+          </select>
           <select id="rte-font" title="Fonte">
             <option value="">Fonte</option>
             <option value="Arial">Arial</option>
@@ -1842,6 +1852,29 @@ function renderAddTextPage(){
   document.getElementById('rte-font').onchange = function(){
     if(this.value) fmt('fontName', this.value);
     this.value = '';
+  };
+  document.getElementById('rte-size').onchange = function(){
+    const z = +this.value; this.value = '';
+    if(!z) return;
+    restoreSel();
+    const sel = window.getSelection();
+    if(!sel.rangeCount || sel.isCollapsed){ showToast('Selecione o trecho para mudar o tamanho.'); return; }
+    try{ document.execCommand('styleWithCSS', false, false); }catch(e){}
+    document.execCommand('fontSize', false, '7');
+    const made = [];
+    ed.querySelectorAll('font[size="7"]').forEach(f=>{
+      const sp = document.createElement('span');
+      sp.style.fontSize = (z * 14 / 13).toFixed(1) + 'px';
+      while(f.firstChild) sp.appendChild(f.firstChild);
+      f.replaceWith(sp);
+      sp.querySelectorAll('[style*="font-size"]').forEach(x=>{ x.style.fontSize = ''; });
+      made.push(sp);
+    });
+    if(made.length){
+      const r = document.createRange();
+      r.setStartBefore(made[0]); r.setEndAfter(made[made.length-1]);
+      sel.removeAllRanges(); sel.addRange(r); savedRange = r.cloneRange();
+    }
   };
   document.getElementById('rte-color').oninput = function(){ fmt('foreColor', this.value); };
 
