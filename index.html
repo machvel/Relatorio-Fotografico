@@ -560,8 +560,13 @@ function richFromEditor(root){
       if(stl.fontFamily){ const f = rteFontKey(stl.fontFamily); if(f) s.f = f; }
       if(stl.fontSize && /px$/.test(stl.fontSize)){ const z = Math.round(parseFloat(stl.fontSize) * 13 / 14); if(z >= 6 && z <= 72) s.z = z; }
     }
-    const block = (tag==='DIV' || tag==='P' || tag==='LI');
+    const block = (tag==='DIV' || tag==='P' || tag==='LI' || tag==='UL' || tag==='OL');
     if(block && !endsNL()) push('\n', st);
+    if(tag==='LI'){
+      const par = node.parentNode;
+      if(par && par.tagName==='OL'){ const n = Array.prototype.indexOf.call(Array.prototype.filter.call(par.children, c=>c.tagName==='LI'), node) + 1; push(n + '. ', s); }
+      else push('\u2022 ', s);
+    }
     node.childNodes.forEach(ch=>walk(ch, s));
     if(block && !endsNL()) push('\n', st);
   };
@@ -612,10 +617,15 @@ function drawRichRuns(doc, runs, x, y, maxW, lineH, size, bottom, onNewPage){
   });
   const lines = [];
   paras.forEach(p=>{
-    let line = [], w = 0;
+    let line = [], w = 0, ln = 0, ind = 0;
+    if(p.length){
+      const m = /^(\u2022|\d+\.)\s/.exec(p[0].t);
+      if(m) ind = measure(m[0], p[0]);
+    }
     const flush = ()=>{
       while(line.length && /^\s+$/.test(line[line.length-1].t)) line.pop();
-      lines.push(line); line = []; w = 0;
+      line.ind = ln > 0 ? ind : 0; ln++;
+      lines.push(line); line = []; w = ind; 
     };
     p.forEach(r=>{
       (r.t.match(/\s+|\S+/g) || []).forEach(tok=>{
@@ -623,6 +633,7 @@ function drawRichRuns(doc, runs, x, y, maxW, lineH, size, bottom, onNewPage){
         if(isSp && !line.length) return;
         let tw = measure(tok, r);
         if(!isSp && w + tw > maxW && line.length){ flush(); }
+        if(isSp && !line.length) return;
         if(!isSp && tw > maxW){
           let chunk = '';
           for(const ch of tok){
@@ -643,7 +654,7 @@ function drawRichRuns(doc, runs, x, y, maxW, lineH, size, bottom, onNewPage){
     const extra = (maxSz - size) * lineH / size;
     if(onNewPage && (y + extra) > bottom){ y = onNewPage(); }
     y += extra;
-    let cx = x, i = 0;
+    let cx = x + (line.ind || 0), i = 0;
     while(i < line.length){
       let seg = line[i], j = i + 1, text = seg.t, wsum = seg.w;
       while(j < line.length && key(line[j]) === key(seg)){ text += line[j].t; wsum += line[j].w; j++; }
@@ -1781,25 +1792,31 @@ function renderAddTextPage(){
           .rte-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 8px;}
           .rte-bar button,.rte-bar select{height:34px;min-width:34px;border:1px solid #c5d0e0;background:#fff;border-radius:6px;font-size:15px;cursor:pointer;padding:0 8px;}
           .rte-bar button:hover{background:#eaf1fb;}
+          .rte-bar select{width:auto !important;max-width:150px;margin:0 !important;}
+          .rte-bar{flex-wrap:wrap;}
           .rte-bar input[type=color]{width:38px;height:34px;padding:2px;border:1px solid #c5d0e0;border-radius:6px;background:#fff;cursor:pointer;}
           .rte-sw{width:22px!important;min-width:22px!important;height:22px!important;padding:0!important;border-radius:50%!important;}
           #f-page-body{width:100%;box-sizing:border-box;min-height:200px;padding:9px 11px;font-size:14px;line-height:1.5;border:1px solid #c5d0e0;border-radius:8px;background:#fff;color:#141414;font-family:Arial,Helvetica,sans-serif;outline:none;overflow-wrap:anywhere;}
           #f-page-body:focus{border-color:#3f5a8c;}
+          #f-page-body ul,#f-page-body ol{margin:4px 0;padding-left:24px;}
+          #f-page-body ul{list-style:disc;} #f-page-body ol{list-style:decimal;}
           #f-page-body:empty:before{content:attr(data-ph);color:#8a94a6;}
         </style>
         <div class="rte-bar" id="rte-bar">
           <button type="button" data-cmd="bold" title="Negrito"><b>B</b></button>
           <button type="button" data-cmd="italic" title="Itálico"><i>I</i></button>
           <button type="button" data-cmd="underline" title="Sublinhado"><u>U</u></button>
-          <select id="rte-size" title="Tamanho">
-            <option value="">Tamanho</option>
-            ${[10,11,12,13,14,16,18,20,24,28,32].map(n=>`<option value="${n}">${n}${n===13?' (padrão)':''}</option>`).join('')}
-          </select>
+          <button type="button" data-cmd="insertUnorderedList" title="Marcadores">&#8226;&#8801;</button>
+          <button type="button" data-cmd="insertOrderedList" title="Numeração">1.</button>
           <select id="rte-font" title="Fonte">
             <option value="">Fonte</option>
             <option value="Arial">Arial</option>
             <option value="Times New Roman">Times New Roman</option>
             <option value="Courier New">Courier New</option>
+          </select>
+          <select id="rte-size" title="Tamanho">
+            <option value="">Tamanho</option>
+            ${[10,11,12,13,14,16,18,20,24,28,32].map(n=>`<option value="${n}">${n}${n===13?' (padrão)':''}</option>`).join('')}
           </select>
           <button type="button" class="rte-sw" data-color="#141414" style="background:#141414" title="Preto"></button>
           <button type="button" class="rte-sw" data-color="#1f4e9c" style="background:#1f4e9c" title="Azul"></button>
