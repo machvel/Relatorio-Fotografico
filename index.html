@@ -935,26 +935,19 @@ async function buildPDFDoc(reportId){
       doc.addPage([780,540], 'landscape');
       drawPageTexture();
 
-      // Cabeçalho igual ao das páginas de fotos: REGISTRO FOTOGRÁFICO, linha e caixa com o título.
+      // Título da página no lugar de "REGISTRO FOTOGRÁFICO", com a linha azul embaixo.
       const drawTextPageHeader = (titleText)=>{
+        // Mesmo estilo do "REGISTRO FOTOGRÁFICO" das páginas de fotos, mas com o título da página.
         doc.setTextColor(...blue);
         doc.setFont('helvetica','normal'); doc.setFontSize(26);
-        doc.text('REGISTRO FOTOGRÁFICO', 40, 55);
+        const tl = doc.splitTextToSize(titleText.toUpperCase(), PW-100);
+        doc.text(tl[0] || '', 40, 55);
+        let lineY = 66;
+        if(tl[1]){ doc.text(tl.slice(1).join(' '), 40, 90); lineY = 101; }
         doc.setDrawColor(...blue); doc.setLineWidth(1.5);
-        doc.line(40, 66, PW-60, 66);
-        doc.setFont('helvetica','bold'); doc.setFontSize(13);
-        const maxBoxW = PW - 100, boxPadH = 24, maxTextW = maxBoxW - boxPadH;
-        const singleW = doc.getTextWidth(titleText);
-        let tLines, boxW;
-        if(singleW <= maxTextW){ tLines = [titleText]; boxW = Math.max(120, singleW + boxPadH); }
-        else { tLines = doc.splitTextToSize(titleText, maxTextW); boxW = maxBoxW; }
-        const lineH = 16, padV = 14, boxH = tLines.length*lineH + padV*2;
-        doc.setDrawColor(...blue); doc.setLineWidth(1);
-        doc.rect((PW-boxW)/2, 78, boxW, boxH);
-        doc.setTextColor(20,20,20);
-        doc.text(tLines, PW/2, 78 + padV + lineH*0.72, {align:'center'});
+        doc.line(40, lineY, PW-60, lineY);
         doc.setFont('helvetica','normal'); doc.setFontSize(13);
-        return 78 + boxH + 30;
+        return lineY + 36;
       };
       const pageTitleText = tp.pageTitle || '(sem título)';
       const by = drawTextPageHeader(pageTitleText);
