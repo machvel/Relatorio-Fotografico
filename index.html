@@ -222,17 +222,17 @@
     body.split .fab-bar-inner{max-width:780px;}
     body.split[data-screen="home"] #app header.topbar{display:none;}
     body.split[data-screen="home"] .fab-bar{display:none;}
-    body.split[data-screen="report"] #btn-back{display:none;}
+    body.split[data-screen="report"] #app #btn-back{display:none;}
     body.split .split-empty{padding-top:22vh;}
     body.split .entry-row img{width:84px;height:84px;}
   }
   .tp-head{display:none;}
-  @media (min-width: 1200px){
-    body.split.has-task #app{margin-right:400px;}
-    body.split.has-task .fab-bar{right:400px;}
+  @media (min-width: 1280px){
+    body.split.has-task #app{margin-right:clamp(480px,46vw,860px);}
+    body.split.has-task .fab-bar{right:clamp(480px,46vw,860px);}
     .task-group.sel > .task-group-title{border-color:var(--blue);box-shadow:0 0 0 2px rgba(68,114,196,.25);}
     body.split.has-task .task-group.sel > .task-group-rows{
-      display:block !important;position:fixed;top:0;right:0;bottom:0;width:400px;margin:0 !important;
+      display:block !important;position:fixed;top:0;right:0;bottom:0;width:clamp(480px,46vw,860px);margin:0 !important;
       background:var(--bg);border-left:1px solid var(--border);box-shadow:-6px 0 18px rgba(31,56,100,.08);
       overflow-y:auto;padding:0 14px 90px;z-index:24;box-sizing:border-box;
     }
@@ -242,6 +242,11 @@
     }
     .tp-head .tp-name{flex:1;min-width:0;font-weight:700;color:var(--navy);font-size:15px;line-height:1.25;overflow-wrap:anywhere;}
     .tp-head button{flex:none;}
+    #text-panel{position:fixed;top:0;right:0;bottom:0;width:clamp(480px,46vw,860px);background:var(--bg);border-left:1px solid var(--border);box-shadow:-6px 0 18px rgba(31,56,100,.08);overflow-y:auto;padding:0 14px 90px;z-index:24;box-sizing:border-box;}
+    #text-panel .tp-head{display:flex;position:sticky;top:0;z-index:2;background:var(--bg);padding:14px 0 10px;margin-bottom:6px;border-bottom:1px solid var(--border);}
+    #text-panel #f-page-body{min-height:340px;font-size:15px;}
+    .task-group.sel .entry-row img{width:140px;height:140px;}
+    .task-group.sel .tp-name{font-size:17px;}
   }
 </style>
 </head>
@@ -266,6 +271,7 @@ const state = {
   loading: false,
   expandedTasks: new Set(),
   selectedTask: null,
+  textPanelOpen: false,
   prefillTask: null
 };
 
@@ -1353,10 +1359,31 @@ function isSplit(){
   return window.matchMedia('(min-width: 900px)').matches && !SPLIT_HIDDEN_SCREENS.includes(state.screen);
 }
 
+function isWideTask(){ return isSplit() && window.matchMedia('(min-width: 1280px)').matches; }
+function closeTextPanel(){
+  state.textPanelOpen = false; state.editingTextPage = null;
+  const el = document.getElementById('text-panel'); if(el) el.remove();
+  updateSplitClass();
+}
+function openTextPanel(entry){
+  state.editingTextPage = entry || null;
+  state.textPanelOpen = true;
+  state.selectedTask = null;
+  document.querySelectorAll('.task-group.sel').forEach(g=>g.classList.remove('sel'));
+  let el = document.getElementById('text-panel');
+  if(!el){ el = document.createElement('div'); el.id = 'text-panel'; document.body.appendChild(el); }
+  updateSplitClass();
+  renderAddTextPage();
+  el.scrollTop = 0;
+}
 function updateSplitClass(){
   document.body.classList.toggle('split', isSplit());
   document.body.dataset.screen = state.screen;
-  document.body.classList.toggle('has-task', isSplit() && window.matchMedia('(min-width: 1200px)').matches && state.screen==='report' && !!state.selectedTask);
+  if(state.textPanelOpen && (state.screen!=='report' || !isWideTask())){
+    state.textPanelOpen = false; state.editingTextPage = null;
+    const el = document.getElementById('text-panel'); if(el) el.remove();
+  }
+  document.body.classList.toggle('has-task', isWideTask() && state.screen==='report' && (!!state.selectedTask || !!state.textPanelOpen));
 }
 
 function reportItemHtml(r){
@@ -1683,7 +1710,7 @@ function renderHeaderForm(mode){
 }
 
 async function openReport(id){
-  if(state.currentReportId !== id) state.selectedTask = null;
+  if(state.currentReportId !== id){ state.selectedTask = null; if(state.textPanelOpen) closeTextPanel(); }
   state.currentReportId = id;
   state.screen = 'report';
   render();
@@ -1713,7 +1740,7 @@ function renderReport(){
   `;
   document.getElementById('btn-back').onclick = ()=>{ state.screen='home'; render(); };
   document.getElementById('btn-add').onclick = ()=>{ state.screen='add'; state.pendingPhotos=[]; render(); };
-  document.getElementById('btn-add-textpage').onclick = ()=>{ state.editingTextPage = null; state.screen='add-textpage'; render(); };
+  document.getElementById('btn-add-textpage').onclick = ()=>{ if(isWideTask()){ openTextPanel(null); return; } state.editingTextPage = null; state.screen='add-textpage'; render(); };
   document.getElementById('btn-pdf').onclick = async (e)=>{
     const btn = e.currentTarget;
     const orig = btn.innerHTML;
@@ -1726,15 +1753,20 @@ function renderReport(){
 
 function renderAddTextPage(){
   const editing = state.editingTextPage; // null = novo, ou {key, pageTitle, pageBody}
-  app.innerHTML = `
-    <header class="topbar">
+  const panel = state.textPanelOpen ? document.getElementById('text-panel') : null;
+  const __done = ()=>{
+    if(panel){ closeTextPanel(); renderReportBody(); }
+    else { state.editingTextPage = null; state.screen='report'; render(); renderReportBody(); }
+  };
+  (panel || app).innerHTML = `
+    ${panel ? `<div class="tp-head"><span class="tp-name">${editing ? 'Editar página de texto' : 'Nova página de texto'}</span><button type="button" class="btn-sm btn-ghost" id="btn-back">✕</button></div>` : `<header class="topbar">
       <button class="back" id="btn-back">←</button>
       <div>
         <h1>${editing ? 'Editar página de texto' : 'Nova página de texto'}</h1>
         <div class="sub">${escapeHtml(state.currentHeader.embarcacao)} — ${escapeHtml(state.currentHeader.turma)}</div>
       </div>
-    </header>
-    <main>
+    </header>`}
+    ${panel ? '' : '<main>'}
       <div class="card">
         <label>Título da página</label>
         <input type="text" id="f-page-title" placeholder="Ex: Observações Gerais da Semana" value="${escapeHtml(editing ? editing.pageTitle : '')}">
@@ -1771,9 +1803,9 @@ function renderAddTextPage(){
         </div>
         ${editing ? `<div class="btn-row"><button class="btn btn-danger-ghost" id="btn-delete-textpage">Excluir esta página</button></div>` : ''}
       </div>
-    </main>
+    ${panel ? '' : '</main>'}
   `;
-  document.getElementById('btn-back').onclick = ()=>{ state.editingTextPage=null; state.screen='report'; render(); renderReportBody(); };
+  document.getElementById('btn-back').onclick = __done;
 
   // ----- editor de texto formatado -----
   const ed = document.getElementById('f-page-body');
@@ -1829,10 +1861,7 @@ function renderAddTextPage(){
       }
       state.currentEntries = await fetchEntries(state.currentReportId);
       showToast(editing ? 'Página atualizada!' : 'Página adicionada!');
-      state.editingTextPage = null;
-      state.screen = 'report';
-      render();
-      renderReportBody();
+      __done();
     }catch(e){
       console.error(e); showToast('Erro ao salvar.');
       btn.innerHTML = editing ? 'Salvar alterações' : 'Adicionar página'; btn.disabled = false;
@@ -1848,10 +1877,7 @@ function renderAddTextPage(){
         await deleteEntry(editing.key);
         state.currentEntries = await fetchEntries(state.currentReportId);
         showToast('Página excluída.');
-        state.editingTextPage = null;
-        state.screen = 'report';
-        render();
-        renderReportBody();
+        __done();
       }catch(e){
         console.error(e); showToast('Erro ao excluir.'); btn.disabled = false;
       }
@@ -2027,6 +2053,7 @@ function renderReportBody(){
       const key = btn.getAttribute('data-key');
       const entry = state.currentEntries.find(e=>e.key===key);
       if(!entry) return;
+      if(isWideTask()){ openTextPanel(entry); return; }
       state.editingTextPage = entry;
       state.screen = 'add-textpage';
       render();
@@ -2068,7 +2095,8 @@ function renderReportBody(){
     titleEl.onclick = (ev)=>{
       if(ev.target.closest('button')) return;
       const task = decodeURIComponent(titleEl.getAttribute('data-task'));
-      if(isSplit() && window.matchMedia('(min-width: 1200px)').matches){
+      if(isSplit() && window.matchMedia('(min-width: 1280px)').matches){
+        if(state.textPanelOpen) closeTextPanel();
         state.selectedTask = (state.selectedTask === task) ? null : task;
         main.querySelectorAll('.task-group').forEach(g=> g.classList.toggle('sel', !!state.selectedTask && decodeURIComponent(g.getAttribute('data-task')) === state.selectedTask));
         updateSplitClass();
