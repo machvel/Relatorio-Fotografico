@@ -226,6 +226,23 @@
     body.split .split-empty{padding-top:22vh;}
     body.split .entry-row img{width:84px;height:84px;}
   }
+  .tp-head{display:none;}
+  @media (min-width: 1200px){
+    body.split.has-task #app{margin-right:400px;}
+    body.split.has-task .fab-bar{right:400px;}
+    .task-group.sel > .task-group-title{border-color:var(--blue);box-shadow:0 0 0 2px rgba(68,114,196,.25);}
+    body.split.has-task .task-group.sel > .task-group-rows{
+      display:block !important;position:fixed;top:0;right:0;bottom:0;width:400px;margin:0 !important;
+      background:var(--bg);border-left:1px solid var(--border);box-shadow:-6px 0 18px rgba(31,56,100,.08);
+      overflow-y:auto;padding:0 14px 90px;z-index:24;box-sizing:border-box;
+    }
+    .task-group.sel .tp-head{
+      display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:2;background:var(--bg);
+      padding:14px 0 10px;margin-bottom:6px;border-bottom:1px solid var(--border);
+    }
+    .tp-head .tp-name{flex:1;min-width:0;font-weight:700;color:var(--navy);font-size:15px;line-height:1.25;overflow-wrap:anywhere;}
+    .tp-head button{flex:none;}
+  }
 </style>
 </head>
 <body>
@@ -247,7 +264,9 @@ const state = {
   pendingPhotos: [],      // [{dataUrl, w, h, phase}]
   authorName: '',
   loading: false,
-  expandedTasks: new Set()
+  expandedTasks: new Set(),
+  selectedTask: null,
+  prefillTask: null
 };
 
 function phaseLabel(entry){
@@ -1337,6 +1356,7 @@ function isSplit(){
 function updateSplitClass(){
   document.body.classList.toggle('split', isSplit());
   document.body.dataset.screen = state.screen;
+  document.body.classList.toggle('has-task', isSplit() && window.matchMedia('(min-width: 1200px)').matches && state.screen==='report' && !!state.selectedTask);
 }
 
 function reportItemHtml(r){
@@ -1663,6 +1683,7 @@ function renderHeaderForm(mode){
 }
 
 async function openReport(id){
+  if(state.currentReportId !== id) state.selectedTask = null;
   state.currentReportId = id;
   state.screen = 'report';
   render();
@@ -1936,7 +1957,8 @@ function renderReportBody(){
     });
     const rows = rowsParts.join('');
     const isOpen = state.expandedTasks.has(task);
-    return `<div class="task-group" data-task="${encodeURIComponent(task)}">
+    const isSel = state.selectedTask === task;
+    return `<div class="task-group${isSel?' sel':''}" data-task="${encodeURIComponent(task)}">
       <div class="task-group-title task-toggle" data-task="${encodeURIComponent(task)}" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
         <span style="display:flex;align-items:center;gap:6px;min-width:0;">
           <button class="drag-handle">☰</button>
@@ -1950,6 +1972,9 @@ function renderReportBody(){
         </span>
       </div>
       <div class="task-group-rows" data-task-rows="${encodeURIComponent(task)}" style="display:${isOpen?'block':'none'};margin-top:8px;">
+        <div class="tp-head"><span class="tp-name">${escapeHtml(task)}</span>
+          <button type="button" class="btn-sm btn-ghost tp-add" data-task="${encodeURIComponent(task)}">+ Fotos</button>
+          <button type="button" class="btn-sm btn-ghost tp-close">✕</button></div>
         ${rows}
       </div>
     </div>`;
@@ -2043,6 +2068,12 @@ function renderReportBody(){
     titleEl.onclick = (ev)=>{
       if(ev.target.closest('button')) return;
       const task = decodeURIComponent(titleEl.getAttribute('data-task'));
+      if(isSplit() && window.matchMedia('(min-width: 1200px)').matches){
+        state.selectedTask = (state.selectedTask === task) ? null : task;
+        main.querySelectorAll('.task-group').forEach(g=> g.classList.toggle('sel', !!state.selectedTask && decodeURIComponent(g.getAttribute('data-task')) === state.selectedTask));
+        updateSplitClass();
+        return;
+      }
       const rowsEl = main.querySelector(`.task-group-rows[data-task-rows="${titleEl.getAttribute('data-task')}"]`);
       const chevron = titleEl.querySelector('.task-chevron');
       if(state.expandedTasks.has(task)){
@@ -2055,6 +2086,16 @@ function renderReportBody(){
         if(chevron) chevron.textContent = '▾';
       }
     };
+  });
+
+  main.querySelectorAll('.tp-close').forEach(b=> b.onclick = ()=>{
+    state.selectedTask = null;
+    main.querySelectorAll('.task-group.sel').forEach(g=>g.classList.remove('sel'));
+    updateSplitClass();
+  });
+  main.querySelectorAll('.tp-add').forEach(b=> b.onclick = ()=>{
+    state.prefillTask = decodeURIComponent(b.getAttribute('data-task'));
+    state.screen = 'add'; render();
   });
 
   // Drag-and-drop reordering of tasks (whole groups)
@@ -2087,6 +2128,7 @@ function renderReportBody(){
 }
 
 function renderAdd(){
+  const __prefill = state.prefillTask; state.prefillTask = null;
   const existingTasks = [...new Set(state.currentEntries.map(e=>e.task))];
   app.innerHTML = `
     <header class="topbar">
@@ -2119,6 +2161,7 @@ function renderAdd(){
     </main>
   `;
   document.getElementById('btn-back').onclick = ()=>{ state.screen='report'; render(); renderReportBody(); };
+  if(__prefill){ const ft = document.getElementById('f-task'); if(ft) ft.value = __prefill; }
 
   const photoList = document.getElementById('photo-list');
   function renderPhotoList(){
