@@ -1,2160 +1,276 @@
-<!DOCTYPE html>
-<!--
-  © 2026 Bram Power. Todos os direitos reservados.
-  Aplicativo desenvolvido internamente para uso exclusivo da equipe da embarcação Bram Power.
-  Reprodução, distribuição ou uso não autorizado é proibido.
--->
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Registro Fotográfico Semanal</title>
-<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAGiUlEQVR4nO3du3EjRxRG4TsoRaAIGIM8hiJHlpiGDKVBWXIUCj3FwAiUwsjYataQnEe/53b/57NU2iUwAO7pHjy4WMyZdV3Xu48B7SzLssT8vV5z8FOPKzmydyOfnl/uOBR0sveYH0URG0uJ7gFs7wCGXc/eY76diR5Dv9XtysKNZOhx5v3t9eO/e8TQ/AoYfOQIIbSOoNkpEIOPUk/PLx9z1CqE6gEw+KgpzFGrEKoGsK7ryuCjhW0INSOoEgCrPnqpfVpUHACrPnqruRs8Sn6Y4cedtrtBruwAGH54UBpBVgAMPzwpiSA5AIYfHuVGkBQAww/PciKIDoDhxwhSI4gKgOHHSFIiuAyA4ceIYiMoeh8AGN1pAKz+GFnMLnAYAMOPGVxFwCkQpO0GwOqPmZztAuwAkPYtAFZ/zOhoF2AHgLRPAbD6Y2Z7uwA7AKR9BMDqDwVfdwF2AEgjAEh7mHH6Ay3b0yB2AEgjAEgjAEgjAEh78AQYisITYXYASCMASCMASCMASCMASCMASCMASCMASCMASGv2RdlehW8g94Z34+8htQN4HX6zH8fm+fhmJRPAKMM1ynHOQiYAYA8BQBoBQBoBQBoBQBoBQBoBQBoBQBoBQBoBQBoBQBoBQNpQH4dW+aDYDLdzlI93DxHADAOhJjxm3kNwfwrE8I/N++PnOgDvdx7ieH4c3Qbg+U5DOq+Pp8vnAF7vLBX//fHL7v//+c9/iy73/e3V3XMClwHgHkeD//XPS0PwxF0ArP79XQ3+0d/PCcHbLuD2OQD6SB3+Wj/rBQEIqzHAo0dAAJBGAKJqrtwj7wIEAGkEIKjFij3qLkAAkObufYCZxb7+zXsh/RBAQ7lv+Hz9OYJohwAaqP1OZ7g8QqiPACpq/RY/IdTHk+AKnp5fun6+pfT6WnyYbdQPyBFAoTs/2OXpQ2WjIoACHgYw9xhqrtijrv5mBJDNw/AHno5lNASQwePA5RxTjZV75NXfjACSeRz+oHcEow+/GS+DJqkx/L/+9vvpn//z919Fl//0/JL8MmkY5NjP88ww+AEBRCoZ/quhP/q7uTHkRGB2HcJMgx8QQITc4U8Z/LOfzwkhNwKzOQf9CAE0UDr4R5dXenqE73gSfCF19a89/CWX7fkJuxcEUFHL4e95HUoI4ETKCtpzMFOui13gHAFUcMeqzE5QBwFAGgEciD11uHMljr1uToOOEQCkEUABD+fhHo5hZASwY8ZThhlvUw0EkMnTyuvpWEZDAJBGAJBGAJBGAJBGAJBGAJBGAJBGAJBGAJk8/Xqip2MZDQHsmPFfX57xNtVAAAU8rLwejmFkBABpBHAg9pThzhU49ro5/TlGAJBGABXcsQtw7l8HAZxIOXXoOZAp18XpzzkCqKhHBKz8dRHAhdQVtOWApl42q/81/nHcBsKg1vpVRVb9dgggwvvba9YvlZeGUDL4rP5xCCBSbgRmnwe59TfEmDH8KQggQUkEQevTGYY/DU+CE3keMM/H5hUBZPA4aB6PaQQEkMnTwHk6ltEQQAEPg+fhGEZGAIXuHECGvxyvAlUQBrHXP0DL4NdDABW1DoHBr48AGqgdAoPfDgE09HVwY4Ng4PshgI4YbH94FQjSCADSCADSCADS3AXAtxnOzdvj6y4AoCeXAXhbJVCHx8fVZQBmPu8s5PP6eLoNwMzvnYY0nh9H1wGY+b7zcM374zfERyHCnchHCcbhffCDIQIIRrlTMQ73p0BASwQAaQQAaQQAaQQAaQQAaQQAaQQAaQQAaQQAaQQAaQQAaY9lWRY+ZQk172+vtizLwg4AaQQAaQQAaQQAaQ8zM54IQ0l4AmzGDgBxBABpHwFwGgQF29MfM3YAiPsUALsAZvZ19TdjB4C4bwGwC2BGe6u/GTsAxO0GwC6AmRyt/mbsABB3GAC7AGZwtvqbXewARICRXQ2/GadAEHcZALsARhSz+ptF7gBEgJHEDr9ZwikQEWAEKcNvlvgcgAjgWerwm2U8CSYCeJQz/GaZrwIRATzJHX6zgpdBiQAelAy/WeH7AESAO5UOv1mF7wlelmVZ13U143t80UdYdEuH36zSF2WHA1nXdSUCtFRj1d+q+k3x7AZopeaqv1U1ALPPu4EZIaBMq8EPmlzoFiEgR+vBD5oHEBACYmxfVWw9/GYdAwhCCGbEgB/2hn5d17VHANWfA1zZ3qhtDAFRzG3vfaMeg36kewBbezd8LwrM485h3/M/rneoEOh3n/cAAAAASUVORK5CYII=">
-<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAGiUlEQVR4nO3du3EjRxRG4TsoRaAIGIM8hiJHlpiGDKVBWXIUCj3FwAiUwsjYataQnEe/53b/57NU2iUwAO7pHjy4WMyZdV3Xu48B7SzLssT8vV5z8FOPKzmydyOfnl/uOBR0sveYH0URG0uJ7gFs7wCGXc/eY76diR5Dv9XtysKNZOhx5v3t9eO/e8TQ/AoYfOQIIbSOoNkpEIOPUk/PLx9z1CqE6gEw+KgpzFGrEKoGsK7ryuCjhW0INSOoEgCrPnqpfVpUHACrPnqruRs8Sn6Y4cedtrtBruwAGH54UBpBVgAMPzwpiSA5AIYfHuVGkBQAww/PciKIDoDhxwhSI4gKgOHHSFIiuAyA4ceIYiMoeh8AGN1pAKz+GFnMLnAYAMOPGVxFwCkQpO0GwOqPmZztAuwAkPYtAFZ/zOhoF2AHgLRPAbD6Y2Z7uwA7AKR9BMDqDwVfdwF2AEgjAEh7mHH6Ay3b0yB2AEgjAEgjAEgjAEh78AQYisITYXYASCMASCMASCMASCMASCMASCMASCMASCMASGv2RdlehW8g94Z34+8htQN4HX6zH8fm+fhmJRPAKMM1ynHOQiYAYA8BQBoBQBoBQBoBQBoBQBoBQBoBQBoBQBoBQBoBQBoBQNpQH4dW+aDYDLdzlI93DxHADAOhJjxm3kNwfwrE8I/N++PnOgDvdx7ieH4c3Qbg+U5DOq+Pp8vnAF7vLBX//fHL7v//+c9/iy73/e3V3XMClwHgHkeD//XPS0PwxF0ArP79XQ3+0d/PCcHbLuD2OQD6SB3+Wj/rBQEIqzHAo0dAAJBGAKJqrtwj7wIEAGkEIKjFij3qLkAAkObufYCZxb7+zXsh/RBAQ7lv+Hz9OYJohwAaqP1OZ7g8QqiPACpq/RY/IdTHk+AKnp5fun6+pfT6WnyYbdQPyBFAoTs/2OXpQ2WjIoACHgYw9xhqrtijrv5mBJDNw/AHno5lNASQwePA5RxTjZV75NXfjACSeRz+oHcEow+/GS+DJqkx/L/+9vvpn//z919Fl//0/JL8MmkY5NjP88ww+AEBRCoZ/quhP/q7uTHkRGB2HcJMgx8QQITc4U8Z/LOfzwkhNwKzOQf9CAE0UDr4R5dXenqE73gSfCF19a89/CWX7fkJuxcEUFHL4e95HUoI4ETKCtpzMFOui13gHAFUcMeqzE5QBwFAGgEciD11uHMljr1uToOOEQCkEUABD+fhHo5hZASwY8ZThhlvUw0EkMnTyuvpWEZDAJBGAJBGAJBGAJBGAJBGAJBGAJBGAJBGAJk8/Xqip2MZDQHsmPFfX57xNtVAAAU8rLwejmFkBABpBHAg9pThzhU49ro5/TlGAJBGABXcsQtw7l8HAZxIOXXoOZAp18XpzzkCqKhHBKz8dRHAhdQVtOWApl42q/81/nHcBsKg1vpVRVb9dgggwvvba9YvlZeGUDL4rP5xCCBSbgRmnwe59TfEmDH8KQggQUkEQevTGYY/DU+CE3keMM/H5hUBZPA4aB6PaQQEkMnTwHk6ltEQQAEPg+fhGEZGAIXuHECGvxyvAlUQBrHXP0DL4NdDABW1DoHBr48AGqgdAoPfDgE09HVwY4Ng4PshgI4YbH94FQjSCADSCADSCADS3AXAtxnOzdvj6y4AoCeXAXhbJVCHx8fVZQBmPu8s5PP6eLoNwMzvnYY0nh9H1wGY+b7zcM374zfERyHCnchHCcbhffCDIQIIRrlTMQ73p0BASwQAaQQAaQQAaQQAaQQAaQQAaQQAaQQAaQQAaQQAaQQAaY9lWRY+ZQk172+vtizLwg4AaQQAaQQAaQQAaQ8zM54IQ0l4AmzGDgBxBABpHwFwGgQF29MfM3YAiPsUALsAZvZ19TdjB4C4bwGwC2BGe6u/GTsAxO0GwC6AmRyt/mbsABB3GAC7AGZwtvqbXewARICRXQ2/GadAEHcZALsARhSz+ptF7gBEgJHEDr9ZwikQEWAEKcNvlvgcgAjgWerwm2U8CSYCeJQz/GaZrwIRATzJHX6zgpdBiQAelAy/WeH7AESAO5UOv1mF7wlelmVZ13U143t80UdYdEuH36zSF2WHA1nXdSUCtFRj1d+q+k3x7AZopeaqv1U1ALPPu4EZIaBMq8EPmlzoFiEgR+vBD5oHEBACYmxfVWw9/GYdAwhCCGbEgB/2hn5d17VHANWfA1zZ3qhtDAFRzG3vfaMeg36kewBbezd8LwrM485h3/M/rneoEOh3n/cAAAAASUVORK5CYII=">
-<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIlJlZ2lzdHJvIEZvdG9ncsOhZmljbyBTZW1hbmFsIiwgInNob3J0X25hbWUiOiAiUmVnaXN0cm8gRm90byIsICJzdGFydF91cmwiOiAiLiIsICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLCAiYmFja2dyb3VuZF9jb2xvciI6ICIjRUVGMUY2IiwgInRoZW1lX2NvbG9yIjogIiMxRjM4NjQiLCAiaWNvbnMiOiBbeyJzcmMiOiAiZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUFNQUFBQURBQ0FZQUFBQlMzR3dIQUFBR2lVbEVRVlI0bk8zZHUzRWpSeFJHNFRzb1JhQUlHSU04aGlKSGxwaUdES1ZCV1hJVUNqM0Z3QWlVd3NqWWF0YVFuRWUvNTNiLzU3TlUyaVV3QU83cEhqeTRXTXlaZFYzWHU0OEI3U3pMc3NUOHZWNXo4Rk9QS3pteWR5T2ZubC91T0JSMHN2ZVlIMFVSRzB1SjdnRnM3d0NHWGMvZVk3NmRpUjVEdjlYdHlzS05aT2h4NXYzdDllTy9lOFRRL0FvWWZPUUlJYlNPb05rcEVJT1BVay9QTHg5ejFDcUU2Z0V3K0tncHpGR3JFS29Hc0s3cnl1Q2poVzBJTlNPb0VnQ3JQbnFwZlZwVUhBQ3JQbnFydVJzOFNuNlk0Y2VkdHJ0QnJ1d0FHSDU0VUJwQlZnQU1QendwaVNBNUFJWWZIdVZHa0JRQXd3L1BjaUtJRG9EaHh3aFNJNGdLZ09ISFNGSWl1QXlBNGNlSVlpTW9laDhBR04xcEFLeitHRm5NTG5BWUFNT1BHVnhGd0NrUXBPMEd3T3FQbVp6dEF1d0FrUFl0QUZaL3pPaG9GMkFIZ0xSUEFiRDZZMlo3dXdBN0FLUjlCTURxRHdWZmR3RjJBRWdqQUVoN21ISDZBeTNiMHlCMkFFZ2pBRWdqQUVnakFFaDc4QVFZaXNJVFlYWUFTQ01BU0NNQVNDTUFTQ01BU0NNQVNDTUFTQ01BU0NNQVNHdjJSZGxlaFc4Zzk0WjM0KzhodFFONEhYNnpIOGZtK2ZobUpSUEFLTU0xeW5IT1FpWUFZQThCUUJvQlFCb0JRQm9CUUJvQlFCb0JRQm9CUUJvQlFCb0JRQm9CUUJvQlFOcFFINGRXK2FEWURMZHpsSTkzRHhIQURBT2hKanhtM2tOd2Z3ckU4SS9OKytQbk9nRHZkeDdpZUg0YzNRYmcrVTVET3ErUHA4dm5BRjd2TEJYLy9mSEw3di8vK2M5L2l5NzMvZTNWM1hNQ2x3SGdIa2VELy9YUFMwUHd4RjBBclA3OVhRMyswZC9QQ2NIYkx1RDJPUUQ2U0IzK1dqL3JCUUVJcXpIQW8wZEFBSkJHQUtKcXJ0d2o3d0lFQUdrRUlLakZpajNxTGtBQWtPYnVmWUNaeGI3K3pYc2gvUkJBUTdsditIejlPWUpvaHdBYXFQMU9aN2c4UXFpUEFDcHEvUlkvSWRUSGsrQUtucDVmdW42K3BmVDZXbnlZYmRRUHlCRkFvVHMvMk9YcFEyV2pJb0FDSGdZdzl4aHFydGlqcnY1bUJKRE53L0FIbm81bE5BU1F3ZVBBNVJ4VGpaVjc1TlhmakFDU2VSeitvSGNFb3crL0dTK0RKcWt4L0wvKzl2dnBuLy96OTE5RmwvLzAvSkw4TW1rWTVOalA4OHd3K0FFQlJDb1ovcXVoUC9xN3VUSGtSR0IySGNKTWd4OFFRSVRjNFU4Wi9MT2Z6d2toTndLek9RZjlDQUUwVURyNFI1ZFhlbnFFNzNnU2ZDRjE5YTg5L0NXWDdma0p1eGNFVUZITDRlOTVIVW9JNEVUS0N0cHpNRk91aTEzZ0hBRlVjTWVxekU1UUJ3RkFHZ0VjaUQxMXVITWxqcjF1VG9PT0VRQ2tFVUFCRCtmaEhvNWhaQVN3WThaVGhobHZVdzBFa01uVHl1dnBXRVpEQUpCR0FKQkdBSkJHQUpCR0FKQkdBSkJHQUpCR0FKQkdBSms4L1hxaXAyTVpEUUhzbVBGZlg1N3hOdFZBQUFVOHJMd2VqbUZrQkFCcEJIQWc5cFRoemhVNDlybzUvVGxHQUpCR0FCWGNzUXR3N2w4SEFaeElPWFhvT1pBcDE4WHB6emtDcUtoSEJLejhkUkhBaGRRVnRPV0FwbDQycS84MS9uSGNCc0tnMXZwVlJWYjlkZ2dnd3Z2YmE5WXZsWmVHVURMNHJQNXhDQ0JTYmdSbW53ZTU5VGZFbURIOEtRZ2dRVWtFUWV2VEdZWS9EVStDRTNrZU1NL0g1aFVCWlBBNGFCNlBhUVFFa01uVHdIazZsdEVRUUFFUGcrZmhHRVpHQUlYdUhFQ0d2eHl2QWxVUUJySFhQMERMNE5kREFCVzFEb0hCcjQ4QUdxZ2RBb1BmRGdFMDlIVndZNE5nNFBzaGdJNFliSDk0RlFqU0NBRFNDQURTQ0FEUzNBWEF0eG5PemR2ajZ5NEFvQ2VYQVhoYkpWQ0h4OGZWWlFCbVB1OHM1UFA2ZUxvTndNenZuWVkwbmg5SDF3R1krYjd6Y00zNzR6ZkVSeUhDbmNoSENjYmhmZkNESVFJSVJybFRNUTczcDBCQVN3UUFhUVFBYVFRQWFRUUFhUVFBYVFRQWFRUUFhUVFBYVFRQWFRUUFhUVFBYVk5bFdSWStaUWsxNzIrdnRpekx3ZzRBYVFRQWFRUUFhUVFBYVE4ek01NElRMGw0QW16R0RnQnhCQUJwSHdGd0dnUUYyOU1mTTNZQWlQc1VBTHNBWnZaMTlUZGpCNEM0YndHd0MyQkdlNnUvR1RzQXhPMEd3QzZBbVJ5dC9tYnNBQkIzR0FDN0FHWnd0dnFiWGV3QVJJQ1JYUTIvR2FkQUVIY1pBTHNBUmhTeitwdEY3Z0JFZ0pIRURyOVp3aWtRRVdBRUtjTnZsdmdjZ0FqZ1dlcndtMlU4Q1NZQ2VKUXovR2FacndJUkFUekpIWDZ6Z3BkQmlRQWVsQXkvV2VIN0FFU0FPNVVPdjFtRjd3bGVsbVZaMTNVMTQzdDgwVWRZZEV1SDM2elNGMldIQTFuWGRTVUN0RlJqMWQrcStrM3g3QVpvcGVhcXYxVTFBTFBQdTRFWklhQk1xOEVQbWx6b0ZpRWdSK3ZCRDVvSEVCQUNZbXhmVld3OS9HWWRBd2hDQ0diRWdCLzJobjVkMTdWSEFOV2ZBMXpaM3FodERBRlJ6RzN2ZmFNZWczNmtld0JiZXpkOEx3ck00ODVoMy9NL3JuZW9FT2gzbi9jQUFBQUFTVVZPUks1Q1lJST0iLCAic2l6ZXMiOiAiMTkyeDE5MiIsICJ0eXBlIjogImltYWdlL3BuZyJ9LCB7InNyYyI6ICJkYXRhOmltYWdlL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQWdBQUFBSUFDQVlBQUFEMGVOVDZBQUFTOVVsRVFWUjRuTzNkc1hranlSR0EwZUo5RzhGRnNESElZeWh5WklscHlMZzA5aXc1Q29YZXhjQUlsQUpsNkhERWdnQUJES2E3cTd2ZXMzVzd3d0dKK3JzR1N6MEZLYjIvdjcrUHZnYUFQVHc5UFQyTitydTlsMTcyYmZRRlZIWHRtL0w3ODB1dlN3Rm82dHI3WGV0QUdCa2dtUW1BRHM1OTh4dndRQlhYM3UvT3ZVY2EydTBKZ0FaT3Y1a05lNERMenIxSG5yNlBDb0w5Q1lBZEdQZ0ErenA5SHhVRSt4TUFHeDEvTXhyNEFHMTlGUVJpWUJzQmNBZERIeUNINC9kZ01iQ05BTGpDMEFmSVRReHM0K1pjY1BnbU12UUI1dlQyK2lNaWhNQWxic29ScDMyQXRSd2k0RUFNZlBBSUlKejJBVloyN2hHQkVDZ2VBQVkvUUMySDkzc2hVRFFBREg2QTJvUkFzUUF3K0FFNFZqa0VTZ1NBd1EvQVZ5cUd3UElCOFA3Ky9tN3dBM0NMNHhCWVBRS1dEUUNuZmdDMit2NzhzdncyWUxrQU1QZ0IyTVBxandXV0NnRHJmZ0QydHVwamdTVUN3S2tmZ05aV2V5d3dmUUE0OVFQUXkwcmJnRjlHWDhBakRIOEFSamplQnN4cXlnMkFsVDhBbzgzK1NHQzZBSERxQnlDTG1SOEpUUFVJd1BBSElLTVpId2xNc1FHdzhnY2d1OWtlQ2FRUEFLZCtBR1l4MHlPQjFJOEFESDhBWmpUREk0RzBBV0Q0QXpDejdCR1FNZ0FNZndCV2tEa0MwZ1dBNFEvQVNySkdRS29BTVB3QldGSEdDRWdUQUlZL0FDdkxGZ0VwQXNEd0I2Q0NUQkV3UEFBTWZ3QXF5UklCUXdQQThBZWdvZ3dSTUN3QURIOEFLaHNkQVVNQ3dQQUhnTEVSMEQwQURIOEErREFxQXJvR2dPRVBBSitOaUlCdUFXRDRBOEJsdlNPZ1N3QVkvZ0J3WGM4SUdQNTdBQUNBL3BvSGdOTS9BTnl1MXhhZ2FRQVkvZ0J3dng0UjBDd0FESDhBMks1MUJQZ01BQUFVMUNRQW5QNEI0SEV0dHdDN0I0RGhEd0Q3YVJVQnV3YUE0UThBKzJzUkFUNERBQUFGN1JZQVR2OEEwTTdlVzRCZEFzRHdCNEQyOW93QWp3QUFvS0NIQThEcEh3RDYyV3NMWUFNQUFBVTlGQUJPL3dEUTN4NWJnTTBCWVBnRHdEaVBSb0JIQUFCUTBLWUFjUG9IZ1BFZTJRTFlBQUJBUVhjSGdOTS9BT1N4ZFF0Z0F3QUFCZDBWQUU3L0FKRFBsaTJBRFFBQUZIUnpBRGo5QTBCZTkyNEJiQUFBb0tDYkFzRHBId0R5dTJjTFlBTUFBQVVKQUFBbzZHb0FXUDhEd0R4dWZReGdBd0FBQlgwWkFFNy9BRENmVzdZQU5nQUFVSkFBQUlDQ0xnYUE5VDhBek92YVl3QWJBQUFvU0FBQVFFRm5BOEQ2SHdEbTk5VmpBQnNBQUNoSUFBQkFRWjhDd1BvZkFOWng2VEdBRFFBQUZDUUFBS0FnQVFBQUJmMFVBSjcvQThCNnpuME93QVlBQUFvU0FBQlFrQUFBZ0lMK0NnRFAvd0ZnWGFlZkE3QUJBSUNDQkFBQUZDUUFBS0FnQVFBQUJmMFM0UU9BQUZEQjhRY0JiUUFBb0NBQkFBQUZDUUFBS0VnQUFFQkJBZ0FBQ2hJQUFGQ1FBQUNBZ243eE93QUFvSTdEN3dLd0FRQ0FnZ1FBQUJRa0FBQ2dJQUVBQUFVSkFBQW9TQUFBUUVFQ0FBQUtFZ0FBVUpBQUFJQ0NCQUFBRkNRQUFLQWdBUUFBQlFrQUFDaElBQUJBUVFJQUFBb1NBQUJRa0FBQWdJSUVBQUFVSkFBQW9DQUJBQUFGZlJ0OUFmRDIrbVAwSmZDbjc4OHZveThCNkVRQU1JekJuOC94YXlJR1lHMGVBVENFNForZjF3aldKZ0Rvem1DWmg5Y0sxaVVBNk1wQW1ZL1hETllrQU9qR0lKbVgxdzdXSXdBQW9DQUJRQmRPa1BQekdzSmFCQUFBRkNRQUFLQWdBUUFBQlFrQUFDaElBQUJBUVFJQUFBb1NBQUJRa0FBQWdJSUVBQUFVSkFBQW9DQUJBQUFGQ1FBQUtFZ0FBRUJCQWdBQUNoSUFBRkNRQUFDQWdnUUFBQlFrQUFDZ0lBRUFBQVVKQUFBb1NBQUFRRUVDQUFBS0VnQUFVSkFBQUlDQ0JBQUFGQ1FBQUtBZ0FRQUFCUWtBQUNoSUFBQkFRUUlBQUFvU0FBQlFrQUFBZ0lJRUFBQVU5RzMwQmRERzIrdVAwWmZBZ254ZjFmWDkrV1gwSmJBekFiQUliOHhBUzhmdk1XSmdEUUpnY2dZLzBKc1lXSU1BbUpUQkQyUndlQzhTQXZQeEljQUpHZjVBTnQ2WDVtTURNQkUvWUVCbXRnRnpzUUdZaE9FUHpNTDcxUndFd0FUOE1BR3o4YjZWbndCSXpnOFJNQ3Z2WDdrSmdNVDg4QUN6OHo2V2x3Qkl5ZzhOc0Fydlp6a0pBQUFveUQ4RFRFZ3RRMjMvL2RmZmJ2N2YvdnJiSHcydlpEOXZyei84ODhCa0JFQXloai9VYzgvQXYvYmZaZzRDRVpDTEFBQVk1SkhCZiszUHpCd0M1Q0FBRW5INmh4cGFEUDVMZjBlMkVMQUZ5RU1BQUhUU1kvQmYranV6aFFEaitWY0FTVGo5dzlwR0RQOU1mLzh4NzNjNUNBQ0F4cklNM3l6WFFRNGVBUUEwa25IZ2VpVEFnUTBBUUFNWmgvK3g3TmRIZXdJZ0FjL0RZQzJ6RE5lUjErbDliendCQUFBRkNRQ0FIYzF5K2orWTdYclpqd0FBMk1tc3czVFc2K1l4QWdCZ0I3TVAwZG12bi9zSkFBQW9TQUFBUEdpVjAvTXFYd2UzRVFBQVVKQUFBSGpBYXFmbTFiNGVMaE1BQUZDUUFBRFlhTlhUOHFwZkZ6OFRBQUJRa0FBQWdJSUVBQUFVSkFBQU5sajlPZm5xWHg4Q0FBQktFZ0FBVUpBQUFJQ0NCQUFBRlBSdDlBVUE3WHgvZm5ub3YzOTcvYkhUbFFEWkNBQ1kzS05EZnV1ZkxRNWdiZ0lBSnROeTROL2o5RG9FQWN4RkFNQUVzZ3o5cnh4Zm94aUEvQVFBSkRYRDBMOUVERUIrQWdDU21YbnduM1A0ZW9RQTVDSUFJSUhWaHY0NXEyMEZmdjN0ajZWL1hlNnZ2LzB4K2hKb1RBREFRQlVHL3ptMkFqQ2VBSUFCcWc3K1UwSUF4dkdiQUtFencvOHo5d1Q2RXdEUXlmZm5GNFB1Q3pQZW4xV2ZrNi82ZGZFemp3Q2dzZG1HMm1nZUMwQWZOZ0RRa09HLzNTejNiclhUOG1wZkQ1ZlpBRUFEc3d5djdHd0RvQjBiQU5pWjRiKy83UGQwbFZQektsOEh0eEVBc0tQc2cycG03aTNzU3dEQURtYjhCUHVNTXQvbjJVL1BzMTgvOXhNQThLQ3NBMmxsV2UvNXJFTjAxdXZtTVFJQUhwQjFFRldROWQ3UE5reG51MTcySXdCZ282d0RxQkt2QVd3bkFHQURneWVQaksvRkxLZnFXYTZUTmdRQTNDbmp3S2t1NDJ1U2ZiaG12ejdhODR1QTRBNFpCdzMvOS8zNUpkMHZERG9NMmYvKzYyK0RyK1NEd2MrQkRRRGN5UERQTCt0cmxHWG9acmtPY2hBQWNJT3NnNFhQc3I1V280ZnY2TCtmZkR3Q2dDdXlEaFF1eS9nNElHTE1Jd0dEbjBzRUFIeGhoZUgvOTMvOGM5Ti85NTkvLzc3emxmU1ZOUUlpK29TQXdjODFBZ0FXc25YWTMvcG56UjRGMmJRSUFZT2ZXd2tBdUdDVzAvK2VRLytldjJ1R0dNaThCVGgyT3JUdkNRSURuNjBFQUp5UmZmajNIUHEzWEVQbUdKZ2xBbzRaNnZRZ0FPQkU1dUdmWWZDZmM3aXVyQ0V3WXdSQWF3SUFKcEIxOEovS0hnTEFCd0VBUjdLZC9tY1ovS2N5aG9BdEFQek1Md0tDUHhuKys4djJOV1I3aldFa0d3QklKdHZRZkZUR2JRQmdBd0FSa2Vka3VOcndQNWJsYTh2eVdzTm9OZ0NRUUpiaDJKcHRBT1JoQTBCNW8wK0VWWWIvc2RGZjgralhIRElRQUpRMmVoQ01Ib1FqamY3YVI3LzJNSm9BZ0VGR0Q4QU0zQU1ZUndCUTFzZ1RvTUgzWWVTOXNBV2dNZ0VBblJuK243a24wSjhBZ0k0TXVzdmNHK2hMQUZEU2lOV3ZBWGZkaUh2a01RQlZDUUFBS0VnQVVJN1RmMjYyQU5DSEFJREdEUC83dVdmUW5nQ2dsTjRuUFlOc3U5NzN6aGFBYWdRQUFCUWtBS0FScC8vSHVZZlFqZ0NnREN0ZXJ2RTlRaVVDQUJwd2N0MlBld2x0Q0FBQUtFZ0F3TTZjV1Bmbm5zTCtCQUFsZUxiTHJYeXZVSVVBZ0IwNXFiYmozc0srQkFBQUZDUUFBS0FnQWNEeWVqM1R0YUp1cjljOTlqa0FLaEFBQUZDUUFBQ0FnZ1FBN01ENnZ4LzNHdlloQUFDZ0lBRUFBQVVKQUpibTA5eHM1WHVIMVFrQUFDaElBTUNEZkNpdFAvY2NIaWNBQUtBZ0FRQUFCUWtBQUNoSUFBQkFRUUlBQUFvU0FBQlFrQUFBZ0lJRUFBQVVKQUFBb0NBQkFBQUZDUUFBS0VnQUFFQkJBZ0FlOUo5Ly96NzZFc3B4eitGeEFnQUFDaElBTE8zdDljZm9TMkJTdm5kWW5RQUFnSUlFQUFBVUpBQmdCejZVMW85N0Rmc1FBQUJRa0FBQWdJSUVBTXZyOVdsdXErbjJldDFqL3dLQUNnUUFBQlFrQUFDZ0lBRUFPL0lZb0IzM0Z2WWxBQ2pCTTExdTVYdUZLZ1FBN014SmRYL3VLZXhQQUFCQVFRSUFHbkJpM1k5N0NXMElBTXJ3YkpkcmZJOVFpUUNBUnB4Y0grY2VRanNDQUFBS0VnQ1UwbnZGNndTN1hlOTdaLzFQTlFJQUdoTUI5M1BQb0QwQlFEa2pUbm9HMnUxRzNDdW5meW9TQUFCUWtBQ2dKRnVBbkp6K29SOEJBQjJKZ012Y0craExBRUJuQnQxbjdnbjBKd0FvYStUcTE4RDdNUEplV1A5VG1RQ0FRVVNBZXdBakNRQktHMzBDckR3QVIzL3RvMTk3R0UwQVVON29RVEI2RUk0dyttc2UvWnBEQnQ5R1h3RHdNUkQvL285L0RyNlN0a1lQZnVDRERRQkVuaFBoeWdNeXk5ZVc1YldHMFd3QUlKblZ0Z0ZaQmovd014c0ErRk8yaytFS2d6UGIxNUR0TllhUmJBRGd5TnZyai9qKy9ETDZNdjR5NnpZZzIrQ1BNUHpobEFDQUNjd1NBaGtIUDNDZUFJQVQyYllBeDdLR1FQYkI3L1FQbndrQU9DTnpCRVQ4UEhCSHhVRDJvWDlnK01ONUFnQXV5QjRCQnoxallKYWhmMkQ0dzJVQ0FCWnlia0J2allMWmhqMXdId0VBWDVobEMvQ1Zxb1BjNlIrKzV2Y0F3QlVHeVh5OFpuQ2RBSUFiR0NqejhGckJiUVFBM01oZ3ljOXJCTGNUQUhBSEF5WXZydzNjUndEQW5ReWFmTHdtY0Q4QkFCc1lPSGw0TFdBYkFRQWJHVHpqZVExZ093RUFEekNBeG5IdjRURUNBQjVrRVBYbm5zUGovQ1pBMk1GaElNMytXd096TS9oaFB6WUFzQ01EcWgzM0Z2WWxBR0JuQnRYKzNGUFluMGNBMElCSEF2c3crS0VkR3dCb3lBRGJ6cjJEdG13QW9ESGJnUHNZL05DSEFJQk9oTURYREg3b3l5TUE2TXlnKzh3OWdmNXNBR0FBMjREL00vaGhIQUVBQTFVTkFZTWZ4aE1Ba01EeFFGdzFCZ3g5eUVVQVFES3JiUVVNZnNoSkFFQlNNMjhGREgzSVR3REFCR2FJQVVNZjVpSUFZREtuZzNaVUVCajRNRGNCQUpQN2FoQS9HZ2VHUEt4TEFNRENESERnRXI4SkVBQUtFZ0FBVUpBQUFJQ0NCQUFBRkNRQUFLQWdBUUFBQlFrQUFDaElBQUJBUVFJQUFBb1NBQWxrL1Q5M0FXakYrOTU0QWdBQUNoSUFBRkNRQUVqQ09neW93dnRkRGdJQUFBb1NBQUJRa0FCSXhGb01XSjMzdVR3RUFBQVVKQUNTVWNmQXFyeS81U0lBRXZKREFxekcrMW8rQWdDQXBnei9uQVJBVW41Z0FHaEpBQ1FtQW9EWmVSL0xTd0FrNTRjSG1KWDNyOXdFd0FUOEVBR3o4YjZWbndDWWhCOG1ZQWJmbjErOFgwMUNBRXpFRHhhUW1mZW51UWlBQ2ZraEE3THh2alNmYjZNdmdHME9QMnh2cno4R1h3bFFtY0UvTHdFd09TRUE5R2JvcjBFQUxPTDBCMUlRQUhzeTlOY2pBQmJsaHhXQXIvZ1FJQUFVSkFBQW9DQUJBQUFGQ1FBQUtFZ0FBRUJCQWdBQUNoSUFBRkNRQUFDQWdnUUFBQlFrQUFDZ0lBRUFBQVVKQUFBb1NBQUFRRUVDQUFBS0VnQUFVSkFBQUlDQ0JBQUFGQ1FBQUtBZ0FRQUFCUWtBQUNoSUFBQkFRUUlBQUFvU0FBQlFrQUFBZ0lJRUFBQVVKQUFBb0NBQkFBQUZDUUFBS0VnQUFFQkJ2enc5UFQyOXZmNFlmUjBBUUFkdnJ6L2k2ZW5weVFZQUFBb1NBQUJRa0FBQWdJSUVBQUFVSkFBQW9DQUJBQUFGQ1FBQUtPaVhpQWkvQ3dBQTFuZjRIUUFSTmdBQVVKSUFBSUNDQkFBQUZDUUFBS0NndndMQUJ3RUJZRjNISHdDTXNBRUFnSklFQUFBVUpBQUFvS0NmQXNEbkFBQmdQYWZQL3lOc0FBQ2dKQUVBQUFVSkFBQW82Rk1BK0J3QUFLemozUFAvQ0JzQUFDaEpBQUJBUVdjRHdHTUFBSmpmcGZWL2hBMEFBSlFrQUFDZ29Jc0I0REVBQU16cnEvVi9oQTBBQUpRa0FBQ2dvQzhEd0dNQUFKalB0ZlYvaEEwQUFKUjBOUUJzQVFCZ0hyZWMvaU5zQUFDZ0pBRUFBQVhkRkFBZUF3QkFmcmV1L3lOc0FBQ2dwSnNEd0JZQUFQSzY1L1FmWVFNQUFDWGRGUUMyQUFDUXo3Mm4vd2diQUFBbzZlNEFzQVVBZ0R5Mm5QNGpiQUFBb0tSTkFXQUxBQURqYlQzOVI5Z0FBRUJKbXdQQUZnQUF4bm5rOUIveDRBWkFCQUJBZjQ4Ty93aVBBQUNncEljRHdCWUFBUHJaNC9RZllRTUFBQ1h0RWdDMkFBRFEzbDZuLzRnZE53QWlBQURhMlhQNFIzZ0VBQUFsN1JvQXRnQUFzTCs5VC84UkRUWUFJZ0FBOXROaStFYzBlZ1FnQWdEZ2NhMkdmNFRQQUFCQVNjMEN3QllBQUxacmVmcVBhTHdCRUFFQWNML1d3eitpd3lNQUVRQUF0K3N4L0NOOEJnQUFTdW9TQUxZQUFIQmRyOU4vUk1jTmdBZ0FnTXQ2RHYrSXpvOEFSQUFBZk5aNytFY00rQXlBQ0FDQUR5T0dmOFNnRHdHS0FBQVlOL3dqQnY0ckFCRUFRR1VqaDMvRTRIOEdLQUlBcUdqMDhJOUk4SHNBUkFBQWxXUVkvaEVKQWlCQ0JBQlFRNWJoSDVFa0FDSkVBQUJyeXpUOEl4SUZRSVFJQUdCTjJZWi9STElBaUJBQkFLd2w0L0NQU0JnQUVTSUFnRFZrSGY0UlNRTWdRZ1FBTUxmTXd6OGljUUJFaUFBQTVwUjkrRWRFZkJ0OUFkYzhQVDA5dmIrL3YwZEVmSDkrR1gwNUFIRFI0ZENhZmZoSFRCQUFFUjgzOHYzOS9WMEVBSkRSREtmK1k2a2ZBWnp5U0FDQWpHWWIvaEdUYkFDT2VTUUFRQll6cmZ4UFRSY0FFUjRKQUREZWpLZitZMU05QWpqbGtRQUFJOHcrL0NNbTNRQWM4MGdBZ0Y1bVh2bWZtajRBSWp3U0FLQzlGVTc5eDVZSWdBUGJBQUQydHRLcC85aFNBUkR4OHpZZ1FnZ0FzTTJxZy85Z3VRQTQ4RmdBZ0sxV1cvZWZzMndBSEhnc0FNQ3RWai8xSDFzK0FDSThGZ0RnYTVVRy8wR0pBRGdRQWdBY3F6ajREMG9Gd0lFUUFLaXQ4dUEvS0JrQUIwSUFvQmFELzBQNUczRHNFQUlSWWdCZ0JhZS9MdDdnLytCR1hHQXJBREEzcC8ydnVTbFgyQW9Bek9QNHhILzRaK0FDNEx6U253RzR4ZkUzamhnQXlPZDA2QSs4bEtrSWdEdUlBWUFjRFAzSENZQ05Mc1ZBaENBQTJKc1A4KzFQQU96ZzlCdFJFQUE4eHNCdlR3QTBjQzBJSWtRQndNSHBzSTh3OEhzUUFCMmMrMFkrRndYSEJBS3dpbk1EL3BoaFA0WUFHT1RhTi95MVFBQ1loUUdmMC84QU96RFhkRXlIYis4QUFBQUFTVVZPUks1Q1lJST0iLCAic2l6ZXMiOiAiNTEyeDUxMiIsICJ0eXBlIjogImltYWdlL3BuZyJ9XX0=">
-<meta name="theme-color" content="#1F3864">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyC_bMAQrPBwBnSLMRTAuOvrxnZ8aKomrVc",
-    authDomain: "app-relatorio-fotografic-c8d7c.firebaseapp.com",
-    projectId: "app-relatorio-fotografic-c8d7c",
-    storageBucket: "app-relatorio-fotografic-c8d7c.firebasestorage.app",
-    messagingSenderId: "506734137526",
-    appId: "1:506734137526:web:d890246d64505030519617",
-    measurementId: "G-C3BEX5N3XL"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-  db.enablePersistence({synchronizeTabs: true}).catch((err)=>{
-    console.warn('Persistência offline não disponível:', err.code);
-  });
-</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relatórios fotográficos</title>
 <style>
-  :root{
-    --navy:#1F3864;
-    --blue:#4472C4;
-    --orange:#ED7D31;
-    --bg:#EEF1F6;
-    --card:#FFFFFF;
-    --text:#1A2233;
-    --muted:#5B6472;
-    --border:#D7DCE5;
-    --danger:#C0392B;
-    --radius:10px;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:"Segoe UI", Arial, sans-serif;
-    background:var(--bg);
-    color:var(--text);
-    -webkit-tap-highlight-color:transparent;
-  }
-  #app{max-width:520px;margin:0 auto;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;}
-
-  header.topbar{
-    background:var(--navy);
-    color:#fff;
-    padding:16px 18px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    position:sticky;top:0;z-index:20;
-    box-shadow:0 2px 6px rgba(0,0,0,.15);
-  }
-  header.topbar .stripe{width:6px;height:26px;background:var(--orange);border-radius:2px;flex:none;}
-  header.topbar h1{font-size:17px;margin:0;font-weight:700;line-height:1.2;}
-  header.topbar .back{background:none;border:none;color:#fff;font-size:20px;padding:4px 8px;cursor:pointer;margin-right:2px;}
-  header.topbar .sub{font-size:12px;color:#c9d4e8;margin-top:1px;}
-
-  main{flex:1;padding:16px;padding-bottom:100px;}
-
-  .card{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:16px;
-    margin-bottom:14px;
-  }
-  .card h2{margin:0 0 10px 0;font-size:15px;color:var(--navy);}
-
-  label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:10px 0 4px;}
-  label:first-child{margin-top:0;}
-  input[type=text], input[type=date], select, textarea{
-    width:100%;
-    padding:11px 12px;
-    border:1.5px solid var(--border);
-    border-radius:8px;
-    font-size:15px;
-    font-family:inherit;
-    background:#fff;
-    color:var(--text);
-  }
-  input:focus, select:focus, textarea:focus{outline:2px solid var(--blue);border-color:var(--blue);}
-
-  .btn{
-    display:inline-flex;align-items:center;justify-content:center;gap:8px;
-    padding:13px 18px;
-    border-radius:9px;
-    border:none;
-    font-size:15px;
-    font-weight:700;
-    cursor:pointer;
-    width:100%;
-  }
-  .btn-primary{background:var(--navy);color:#fff;}
-  .btn-primary:active{background:#152647;}
-  .btn-orange{background:var(--orange);color:#fff;}
-  .btn-orange:active{background:#d5691c;}
-  .btn-ghost{background:#fff;color:var(--navy);border:1.5px solid var(--navy);}
-  .btn-danger-ghost{background:#fff;color:var(--danger);border:1.5px solid var(--danger);}
-  .btn-sm{padding:8px 12px;font-size:13px;width:auto;}
-  .btn-row{display:flex;gap:10px;margin-top:12px;}
-  .btn[disabled]{opacity:.5;}
-
-  .empty{
-    text-align:center;color:var(--muted);padding:40px 10px;font-size:14px;
-  }
-  .empty .big{font-size:38px;margin-bottom:10px;}
-
-  .report-item{
-    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
-    padding:14px;margin-bottom:10px;cursor:pointer;
-    display:flex;justify-content:space-between;align-items:center;gap:10px;
-  }
-  .report-item:active{background:#f4f6fa;}
-  .report-item .ri-left{flex:1;min-width:0;}
-  .report-item .ri-title{font-weight:700;font-size:14.5px;color:var(--navy);}
-  .report-item .ri-sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
-  .report-item .ri-count{
-    background:var(--navy);color:#fff;font-size:12px;font-weight:700;
-    border-radius:20px;padding:4px 10px;flex:none;
-  }
-
-  .header-summary{font-size:13px;color:var(--text);line-height:1.7;}
-  .header-summary b{color:var(--navy);}
-
-  .task-group{margin-bottom:16px;}
-  .task-group-title{
-    font-weight:700;font-size:13.5px;color:var(--navy);
-    padding-bottom:6px;margin-bottom:8px;border-bottom:2px solid var(--blue);
-  }
-  .entry-row{
-    display:flex;gap:10px;align-items:center;
-    background:var(--card);border:1px solid var(--border);border-radius:9px;
-    padding:8px;margin-bottom:8px;
-  }
-  .entry-row img{width:56px;height:56px;object-fit:cover;border-radius:6px;flex:none;background:#eee;}
-  .entry-row .er-info{flex:1;min-width:0;}
-  .phase-tag{
-    display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:3px;
-  }
-  .phase-Antes{background:#FDEBD0;color:#8a5a00;}
-  .phase-Durante{background:#D6EAF8;color:#1B5C8A;}
-  .phase-Depois{background:#D5F5E3;color:#1E7B4D;}
-  .phase-Outro{background:#E8DAEF;color:#6C3483;}
-  .entry-row .er-meta{font-size:11px;color:var(--muted);margin-top:2px;}
-  .entry-row .er-del{background:none;border:none;color:var(--danger);font-size:18px;padding:6px;cursor:pointer;flex:none;}
-  .drag-handle{background:none;border:none;color:var(--muted);font-size:17px;padding:6px 8px;cursor:grab;touch-action:none;flex:none;}
-  .dragging-item{opacity:.9;box-shadow:0 8px 20px rgba(0,0,0,.18);background:#fff;border-radius:9px;}
-
-  .fab-bar{
-    position:fixed;bottom:0;left:0;right:0;
-    background:linear-gradient(to top, var(--bg) 60%, transparent);
-    padding:14px 16px 18px;
-    z-index:15;
-  }
-  .fab-bar-inner{max-width:520px;margin:0 auto;display:flex;gap:10px;}
-
-  .photo-preview{
-    width:100%;border-radius:9px;border:1.5px solid var(--border);
-    max-height:280px;object-fit:contain;background:#f2f2f2;margin-bottom:8px;
-  }
-  .phase-choice{display:flex;gap:8px;margin-top:4px;}
-  .phase-btn{
-    flex:1;padding:11px 4px;border-radius:8px;border:1.5px solid var(--border);
-    background:#fff;font-size:13.5px;font-weight:700;cursor:pointer;color:var(--muted);
-  }
-  .phase-btn.active-Antes{background:#FDEBD0;border-color:#e0a233;color:#8a5a00;}
-  .phase-btn.active-Durante{background:#D6EAF8;border-color:#4472C4;color:#1B5C8A;}
-  .phase-btn.active-Depois{background:#D5F5E3;border-color:#3fa66d;color:#1E7B4D;}
-  .phase-btn.active-Outro{background:#E8DAEF;border-color:#8e44ad;color:#6C3483;}
-
-  .hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
-  .toast{
-    position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
-    background:var(--navy);color:#fff;padding:10px 18px;border-radius:30px;
-    font-size:13.5px;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:50;
-    opacity:0;transition:opacity .25s;pointer-events:none;
-  }
-  .toast.show{opacity:1;}
-
-  .spinner{
-    width:16px;height:16px;border:2.5px solid rgba(255,255,255,.4);
-    border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
-  }
-  @keyframes spin{to{transform:rotate(360deg);}}
-
-  #camera-input{display:none;}
-  #offline-banner{
-    position:fixed;top:0;left:0;right:0;z-index:30;
-    background:#B7791F;color:#fff;text-align:center;
-    font-size:12.5px;font-weight:600;padding:7px 10px;
-    display:none;
-  }
-  #offline-banner.show{display:block;}
+:root{--blue:#3f5a8c;--blue2:#4472c4;--orange:#ff6a00;--navy:#1f2f4f;--bg:#f3f6fb;--line:#d5dce8;--txt:#1f2f4f;--mut:#5b6577;--ok-bg:#eaf3de;--ok:#27500a;--warn-bg:#faeeda;--warn:#633806;--acc-bg:#e6f1fb;--acc:#0c447c;--err:#a32d2d}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,"Segoe UI",system-ui,sans-serif;color:var(--txt);background:var(--bg);font-size:15px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 14px;cursor:pointer}
+button:hover{border-color:var(--blue)}
+button.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+button.pri:hover{background:var(--navy)}
+button.dng{color:var(--err)}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fff}
+textarea{min-height:90px;resize:vertical}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+#app{display:grid;grid-template-columns:290px minmax(0,1fr);min-height:100vh}
+#side{background:#fff;border-right:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px}
+#side h1{font-size:18px;margin:0;color:var(--blue)}
+.item{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:8px}
+.item.sel{border:2px solid var(--blue2);padding:9px 11px;background:var(--acc-bg)}
+.item b{display:block;font-size:15px;font-weight:600}
+.item span{font-size:12px;color:var(--mut)}
+#main{padding:20px;min-width:0}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;max-width:880px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.lbl{font-size:12px;color:var(--mut);margin:0}
+.val{margin:0 0 10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.chip{display:inline-block;background:var(--bg);border-radius:8px;padding:4px 10px;margin:0 6px 6px 0;font-size:13px}
+.ph{width:100%;aspect-ratio:16/9;background:var(--bg);border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--mut);overflow:hidden;margin-top:12px}
+.ph img{width:100%;height:100%;object-fit:contain;background:#000}
+.badge{font-size:12px;font-weight:600;border-radius:8px;padding:4px 12px}
+.b-Antes{background:var(--warn-bg);color:var(--warn)}
+.b-Durante{background:var(--acc-bg);color:var(--acc)}
+.b-Depois{background:var(--ok-bg);color:var(--ok)}
+.ok{background:var(--ok-bg);color:var(--ok);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:14px}
+.err{color:var(--err);font-size:13px;margin:6px 0 0}
+.empty{text-align:center;color:var(--mut);padding:40px 10px}
+.back{display:none}
+.hr{border-top:1px solid var(--line);margin:14px 0}
+@media(max-width:799px){
+#app{display:block}
+#app #main{display:none}
+#app.detail #side{display:none}
+#app.detail #main{display:block}
+.back{display:inline-block;margin-bottom:12px}
+#main{padding:12px}
+.grid2{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
-<div id="offline-banner">📡 Sem conexão — suas fotos ficam salvas e enviam sozinhas quando o sinal voltar</div>
-<div id="app"></div>
-<div class="toast" id="toast"></div>
-<input type="file" id="camera-input" accept="image/*" multiple>
-
+<div id="app">
+  <aside id="side"></aside>
+  <main id="main"></main>
+</div>
+<input id="file" type="file" accept="image/*" capture="environment" hidden>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const ADMIN_PASSWORD = 'Tainav';
+var S={reports:[]},sel=null,pg=0,mode="view",pending=null,msg="",err="";
+var PHASES=["Antes","Durante","Depois"];
 
-const state = {
-  screen: 'home',        // home | new | report | add
-  reports: [],
-  currentReportId: null,
-  currentHeader: null,
-  currentEntries: [],
-  pendingPhotos: [],      // [{dataUrl, w, h, phase}]
-  authorName: '',
-  loading: false,
-  expandedTasks: new Set()
-};
+function openDb(){return new Promise(function(res,rej){var q=indexedDB.open("bram-relatorios",1);q.onupgradeneeded=function(){q.result.createObjectStore("kv")};q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})}
+function dbGet(){return openDb().then(function(d){return new Promise(function(res){var r=d.transaction("kv").objectStore("kv").get("state");r.onsuccess=function(){res(r.result)};r.onerror=function(){res(null)}})}).catch(function(){return null})}
+function dbSet(v){return openDb().then(function(d){return new Promise(function(res){var t=d.transaction("kv","readwrite");t.objectStore("kv").put(v,"state");t.oncomplete=res;t.onerror=res})}).catch(function(){})}
+function persist(){return dbSet(S)}
 
-function phaseLabel(entry){
-  const phase = typeof entry === 'string' ? entry : entry.phase;
-  if(phase === 'Outro'){
-    const text = (typeof entry === 'object' && entry.phaseText) ? entry.phaseText : 'Outro';
-    return text;
-  }
-  return phase === 'Durante' ? 'Durante a Atividade' : `${phase} da Atividade`;
-}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function cur(){for(var i=0;i<S.reports.length;i++){if(S.reports[i].id===sel){return S.reports[i]}}return null}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function slug(t){return String(t).replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"")}
 
-function slugify(s){
-  return (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-}
-
-function applyTaskOrder(tasksPresent, savedOrder){
-  savedOrder = savedOrder || [];
-  const inSaved = savedOrder.filter(t => tasksPresent.includes(t));
-  const notInSaved = tasksPresent.filter(t => !savedOrder.includes(t));
-  return [...inSaved, ...notInSaved];
-}
-
-async function moveTask(direction, task){
-  const header = state.currentHeader;
-  const currentOrder = applyTaskOrder([...new Set(state.currentEntries.map(e=>e.task))], header.taskOrder);
-  const idx = currentOrder.indexOf(task);
-  const swapWith = direction === 'up' ? idx-1 : idx+1;
-  if(swapWith < 0 || swapWith >= currentOrder.length) return;
-  [currentOrder[idx], currentOrder[swapWith]] = [currentOrder[swapWith], currentOrder[idx]];
-  await updateReportHeader(state.currentReportId, {taskOrder: currentOrder});
-  state.currentHeader = await fetchHeader(state.currentReportId);
-  renderReportBody();
-}
-
-async function moveEntry(direction, key, task){
-  const taskEntries = state.currentEntries.filter(e=>e.task===task).sort((a,b)=>a.ts-b.ts);
-  const idx = taskEntries.findIndex(e=>e.key===key);
-  const swapWith = direction === 'up' ? idx-1 : idx+1;
-  if(swapWith < 0 || swapWith >= taskEntries.length) return;
-  const a = taskEntries[idx], b = taskEntries[swapWith];
-  await Promise.all([
-    updateEntry(state.currentReportId, a.key, {ts: b.ts}),
-    updateEntry(state.currentReportId, b.key, {ts: a.ts}),
-  ]);
-  state.currentEntries = await fetchEntries(state.currentReportId);
-  renderReportBody();
-}
-
-async function toggleEntryPageBreak(key){
-  const entry = state.currentEntries.find(e=>e.key===key);
-  if(!entry) return;
-  const newVal = !entry.pageBreakBefore;
-  await updateEntry(state.currentReportId, key, {pageBreakBefore: newVal});
-  entry.pageBreakBefore = newVal;
-  renderReportBody();
-}
-
-// Generic press-and-drag reordering for a flat list of sibling items inside `container`.
-// `itemSelector` identifies the draggable items; `handleSelector` identifies the grip that starts the drag.
-// `onReorder(orderedItemElements)` is called once the drag ends, with items in their new DOM order.
-function enableDragReorder(container, itemSelector, handleSelector, onReorder){
-  let dragging = null, startY = 0;
-  const items = ()=> Array.from(container.querySelectorAll(itemSelector));
-
-  function onPointerMove(e){
-    if(!dragging) return;
-    e.preventDefault();
-    const dy = e.clientY - startY;
-    dragging.style.transform = `translateY(${dy}px)`;
-    const dRect = dragging.getBoundingClientRect();
-    const dCenter = dRect.top + dRect.height/2;
-    for(const sib of items()){
-      if(sib === dragging) continue;
-      const sRect = sib.getBoundingClientRect();
-      const sCenter = sRect.top + sRect.height/2;
-      if(Math.abs(dCenter - sCenter) < sRect.height/2){
-        const children = Array.from(container.children);
-        const dIdx = children.indexOf(dragging);
-        const sIdx = children.indexOf(sib);
-        if(dIdx < sIdx) container.insertBefore(dragging, sib.nextSibling);
-        else container.insertBefore(dragging, sib);
-        const prevTop = dRect.top;
-        dragging.style.transform = '';
-        const restRect = dragging.getBoundingClientRect();
-        const newDy = prevTop - restRect.top;
-        dragging.style.transform = `translateY(${newDy}px)`;
-        startY = e.clientY - newDy;
-        break;
-      }
-    }
-  }
-
-  function onPointerUp(){
-    if(!dragging) return;
-    const el = dragging;
-    el.style.transform = '';
-    el.style.position = '';
-    el.style.zIndex = '';
-    el.style.transition = '';
-    el.classList.remove('dragging-item');
-    document.removeEventListener('pointermove', onPointerMove);
-    document.removeEventListener('pointerup', onPointerUp);
-    dragging = null;
-    onReorder(items());
-  }
-
-  container.addEventListener('pointerdown', (e)=>{
-    const handle = e.target.closest(handleSelector);
-    if(!handle || !container.contains(handle)) return;
-    const item = handle.closest(itemSelector);
-    if(!item) return;
-    e.preventDefault();
-    dragging = item;
-    startY = e.clientY;
-    item.classList.add('dragging-item');
-    item.style.position = 'relative';
-    item.style.zIndex = '100';
-    item.style.transition = 'none';
-    document.addEventListener('pointermove', onPointerMove);
-    document.addEventListener('pointerup', onPointerUp);
+function renderSide(){
+  var h='<h1>Relatórios</h1><button class="pri" data-act="new">Novo relatório</button>';
+  if(!S.reports.length){h+='<p class="lbl">Nenhum relatório ainda.</p>'}
+  S.reports.forEach(function(r){
+    h+='<button class="item'+(r.id===sel?' sel':'')+'" data-act="open" data-id="'+r.id+'"><b>'+esc(r.title)+'</b><span>'+esc(r.turma)+' · '+esc(r.periodo||"sem período")+' · '+r.pages.length+' fotos</span></button>';
   });
+  document.getElementById("side").innerHTML=h;
 }
 
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2200);
+function headerForm(r,isNew){
+  var h='<p style="font-size:18px;font-weight:600;margin:0 0 4px">'+(isNew?"Novo relatório":"Editar cabeçalho")+'</p>';
+  h+='<label>Nome do relatório</label><input id="f-title" value="'+esc(r.title)+'" placeholder="Base dos MCP\'s">';
+  if(err){h+='<p class="err">'+esc(err)+'</p>'}
+  h+='<label>Embarcação</label><input id="f-vessel" value="'+esc(r.vessel)+'">';
+  h+='<label>Turma</label><input id="f-turma" value="'+esc(r.turma)+'" placeholder="Turma B">';
+  h+='<label>CMT | CFM</label><input id="f-cmt" value="'+esc(r.cmt)+'" placeholder="CMT Nome | CFM Nome">';
+  h+='<label>Setor</label><input id="f-setor" value="'+esc(r.setor)+'">';
+  h+='<label>Período</label><input id="f-periodo" value="'+esc(r.periodo)+'" placeholder="26 out a 01 nov">';
+  h+='<label>Colaboradores (um por linha)</label><textarea id="f-col" placeholder="CFM Nome Sobrenome">'+esc(r.colaboradores.join("\n"))+'</textarea>';
+  h+='<div class="btns" style="margin-top:14px;justify-content:flex-end"><button data-act="cancel">Cancelar</button><button class="pri" data-act="save-header">Salvar</button></div>';
+  return h;
 }
 
-async function loadAuthorName(){
-  try{
-    const v = localStorage.getItem('author-name');
-    if(v) state.authorName = v;
-  }catch(e){}
-}
-async function saveAuthorName(name){
-  state.authorName = name;
-  try{ localStorage.setItem('author-name', name); }catch(e){}
-}
-
-// ---------- Data layer ----------
-
-async function fetchReports(){
-  try{
-    const snap = await db.collection('reports').get();
-    const reports = [];
-    for(const docSnap of snap.docs){
-      const header = docSnap.data();
-      const entriesSnap = await db.collection('reports').doc(docSnap.id).collection('entries').get();
-      reports.push({id: docSnap.id, header, count: entriesSnap.size});
-    }
-    reports.sort((a,b)=> (b.header.criadoEm||0) - (a.header.criadoEm||0));
-    return reports;
-  }catch(e){
-    console.error('fetchReports', e);
-    return [];
+function renderMain(){
+  var el=document.getElementById("main"),r=cur(),h="";
+  if(mode==="newReport"){
+    el.innerHTML='<div class="card">'+headerForm({title:"",vessel:"BRAM POWER",turma:"",cmt:"",setor:"Máquinas",periodo:"",colaboradores:[]},true)+'</div>';
+    return;
   }
-}
-
-async function createReport(data){
-  const id = slugify(`${data.embarcacao}-${data.turma}-${data.periodo}`) || ('relatorio-' + Date.now());
-  const header = {...data, criadoEm: Date.now()};
-  await db.collection('reports').doc(id).set(header);
-  return id;
-}
-
-async function deleteReport(id){
-  const entriesSnap = await db.collection('reports').doc(id).collection('entries').get();
-  const batchDeletes = entriesSnap.docs.map(d => d.ref.delete());
-  await Promise.all(batchDeletes);
-  await db.collection('reports').doc(id).delete();
-}
-
-// ---------- Access requests ----------
-
-async function submitAccessRequest(name){
-  const ref = await db.collection('accessRequests').add({
-    name, status: 'pending', requestedAt: Date.now()
-  });
-  return ref.id;
-}
-
-async function getAccessRequest(id){
-  const docSnap = await db.collection('accessRequests').doc(id).get();
-  return docSnap.exists ? { id: docSnap.id, ...docSnap.data() } : null;
-}
-
-async function fetchAllAccessRequests(){
-  const snap = await db.collection('accessRequests').get();
-  const list = snap.docs.map(d=>({ id: d.id, ...d.data() }));
-  list.sort((a,b)=> (b.requestedAt||0) - (a.requestedAt||0));
-  return list;
-}
-
-async function setAccessRequestStatus(id, status){
-  await db.collection('accessRequests').doc(id).update({ status });
-}
-
-async function fetchHeader(id){
-  const docSnap = await db.collection('reports').doc(id).get();
-  return docSnap.exists ? docSnap.data() : null;
-}
-
-async function updateReportHeader(id, data){
-  await db.collection('reports').doc(id).update(data);
-}
-
-async function fetchEntries(id){
-  const snap = await db.collection('reports').doc(id).collection('entries').get();
-  const entries = snap.docs.map(d => ({key: d.id, ...d.data()}));
-  entries.sort((a,b)=>(a.ts||0)-(b.ts||0));
-  return entries;
-}
-
-async function addEntry(reportId, entry){
-  const entryId = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-  await db.collection('reports').doc(reportId).collection('entries').doc(entryId).set(entry);
-}
-
-async function addTextPage(reportId, pageTitle, pageBody){
-  const taskId = `txt-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
-  await addEntry(reportId, {
-    task: taskId, isTextPage: true, pageTitle, pageBody,
-    phase: null, phaseText: '', author: '', photo: null, w: 0, h: 0,
-    ts: Date.now()
-  });
-  return taskId;
-}
-
-async function deleteEntry(key){
-  await db.collection('reports').doc(state.currentReportId).collection('entries').doc(key).delete();
-}
-
-async function updateEntry(reportId, key, data){
-  await db.collection('reports').doc(reportId).collection('entries').doc(key).update(data);
-}
-
-async function moveEntryToReport(sourceReportId, targetReportId, entry, newTask, keepOriginal){
-  const { key, ...data } = entry;
-  data.task = newTask;
-  await addEntry(targetReportId, data);
-  if(!keepOriginal){
-    await db.collection('reports').doc(sourceReportId).collection('entries').doc(key).delete();
+  if(!r){
+    el.innerHTML='<div class="card empty"><p style="font-size:18px;font-weight:600;color:var(--txt);margin:0 0 6px">Selecione um relatório</p><p style="margin:0 0 14px">Escolha um da lista ou crie o primeiro.</p><button class="pri" data-act="new">Novo relatório</button></div>';
+    return;
   }
+  if(mode==="editHeader"){
+    el.innerHTML='<div class="card">'+headerForm(r,false)+'</div>';
+    return;
+  }
+  h+='<button class="back" data-act="back">Voltar à lista</button>';
+  h+='<div class="card">';
+  if(msg){h+='<div class="ok">'+esc(msg)+'</div>'}
+  h+='<div class="row"><div><p style="font-size:20px;font-weight:600;margin:0">'+esc(r.title)+'</p><p class="lbl">'+esc(r.vessel)+' · '+esc(r.turma)+' · '+esc(r.setor)+'</p></div>';
+  h+='<div class="btns"><button data-act="edit">Editar</button><button class="pri" data-act="pdf">Exportar PDF</button></div></div>';
+  h+='<div class="grid2"><div><p class="lbl">CMT | CFM</p><p class="val">'+esc(r.cmt||"-")+'</p></div><div><p class="lbl">Período</p><p class="val">'+esc(r.periodo||"-")+'</p></div></div>';
+  h+='<p class="lbl">Colaboradores</p><div>'+(r.colaboradores.length?r.colaboradores.map(function(c){return '<span class="chip">'+esc(c)+'</span>'}).join(""):'<span class="lbl">Nenhum colaborador informado.</span>')+'</div>';
+  h+='<div class="hr"></div>';
+  if(mode==="addPhoto"&&pending){
+    h+='<p style="font-size:16px;font-weight:600;margin:0 0 4px">Nova foto</p>';
+    h+='<div class="ph"><img alt="Foto nova" src="'+pending.data+'"></div>';
+    var last=r.pages.length?r.pages[r.pages.length-1]:{task:"",phase:"Antes"};
+    h+='<label>Descrição da tarefa</label><input id="p-task" value="'+esc(last.task)+'" placeholder="Shock Fast das bases do ME#1 - base 1BB">';
+    if(err){h+='<p class="err">'+esc(err)+'</p>'}
+    h+='<label>Fase</label><select id="p-phase">'+PHASES.map(function(p){return '<option'+(p===last.phase?' selected':'')+'>'+p+'</option>'}).join("")+'</select>';
+    h+='<div class="btns" style="margin-top:14px;justify-content:flex-end"><button data-act="cancel-photo">Cancelar</button><button class="pri" data-act="save-photo">Salvar foto</button></div>';
+  }else if(!r.pages.length){
+    h+='<div class="empty"><p style="margin:0 0 12px">Este relatório ainda não tem fotos.</p><button class="pri" data-act="photo">Tirar ou escolher foto</button></div>';
+  }else{
+    if(pg>=r.pages.length){pg=r.pages.length-1}
+    var p=r.pages[pg];
+    h+='<div class="ph"><img alt="'+esc(p.task)+'" src="'+p.img+'"></div>';
+    h+='<div class="row" style="margin-top:12px"><div><p style="font-weight:600;margin:0">'+esc(p.task)+'</p><p class="lbl">Página '+(pg+1)+' de '+r.pages.length+'</p></div><span class="badge b-'+p.phase+'">'+p.phase+'</span></div>';
+    h+='<div class="row" style="margin-top:12px"><button data-act="prev" aria-label="Página anterior">&larr;</button><div class="btns"><button class="pri" data-act="photo">Adicionar foto</button><button class="dng" data-act="del-page">Excluir página</button></div><button data-act="next" aria-label="Próxima página">&rarr;</button></div>';
+  }
+  h+='<div class="hr"></div><button class="dng" data-act="del-report">Excluir relatório</button>';
+  h+='</div>';
+  el.innerHTML=h;
 }
-
-async function moveTaskToReport(sourceReportId, targetReportId, entries, newTask, keepOriginal){
-  for(const entry of entries){
-    await moveEntryToReport(sourceReportId, targetReportId, entry, newTask, keepOriginal);
-  }
-}
-
-async function renameTask(oldTask){
-  const input = prompt('Novo nome da tarefa:', oldTask);
-  if(input === null) return;
-  const newTask = input.trim();
-  if(!newTask || newTask === oldTask) return;
-
-  const entries = state.currentEntries.filter(e=>e.task===oldTask);
-  await Promise.all(entries.map(e=> updateEntry(state.currentReportId, e.key, {task: newTask})));
-
-  const header = state.currentHeader;
-  if(header.taskOrder && header.taskOrder.includes(oldTask)){
-    const newOrder = header.taskOrder.map(t=> t===oldTask ? newTask : t);
-    await updateReportHeader(state.currentReportId, {taskOrder: newOrder});
-    state.currentHeader = await fetchHeader(state.currentReportId);
-  }
-
-  if(state.expandedTasks.has(oldTask)){
-    state.expandedTasks.delete(oldTask);
-    state.expandedTasks.add(newTask);
-  }
-
-  state.currentEntries = await fetchEntries(state.currentReportId);
-  showToast('Tarefa renomeada!');
-  renderReportBody();
-}
-
-// ---------- Image handling ----------
-
-function compressImage(file){
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    reader.onload = (e)=>{
-      const img = new Image();
-      img.onload = ()=>{
-        const maxDim = 1100;
-        let w = img.width, h = img.height;
-        if(w > h && w > maxDim){ h = Math.round(h * maxDim/w); w = maxDim; }
-        else if(h > maxDim){ w = Math.round(w * maxDim/h); h = maxDim; }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.62);
-        resolve({dataUrl, w, h});
-      };
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-// ---------- PDF generation ----------
-
-async function buildPDFDoc(reportId){
-  const header = state.currentHeader;
-  const entries = state.currentEntries;
-  if(entries.length === 0){ showToast('Adicione ao menos uma foto antes de gerar o relatório.'); return; }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({orientation:'landscape', unit:'pt', format:[780,540]});
-  const PW = 780, PH = 540;
-  const navy = [31,56,100], blue = [68,114,196], orange=[237,125,49], muted=[91,100,114];
-  const sidebarNavy = [61,81,133], sidebarOrange = [255,102,0];
-  const sidebarX = 761, sidebarW = 12, sidebarTop = PH*0.023, sidebarBottom = PH*0.974;
-
-  function drawPageTexture(){
-    doc.setDrawColor(242,242,244); doc.setLineWidth(0.5);
-    for(let y=0; y<PH; y+=4){
-      doc.line(0, y, PW, y);
-    }
-  }
-
-  // Cover page sidebar: navy on top (~70%), orange below.
-  function drawSidebarCover(){
-    const splitY = sidebarTop + (sidebarBottom-sidebarTop)*0.697;
-    doc.setDrawColor(...sidebarNavy); doc.setLineWidth(sidebarW);
-    doc.line(sidebarX, sidebarTop, sidebarX, splitY);
-    doc.setDrawColor(...sidebarOrange); doc.setLineWidth(sidebarW);
-    doc.line(sidebarX, splitY, sidebarX, sidebarBottom);
-  }
-  // Content pages sidebar: orange on top (~21%), navy below.
-  function drawSidebarContent(){
-    const splitY = sidebarTop + (sidebarBottom-sidebarTop)*0.212;
-    doc.setDrawColor(...sidebarOrange); doc.setLineWidth(sidebarW);
-    doc.line(sidebarX, sidebarTop, sidebarX, splitY);
-    doc.setDrawColor(...sidebarNavy); doc.setLineWidth(sidebarW);
-    doc.line(sidebarX, splitY, sidebarX, sidebarBottom);
-  }
-
-  const reportTitle = header.tituloRelatorio !== undefined ? header.tituloRelatorio.trim() : 'Relatório Fotográfico';
-
-  // Cover page
-  drawPageTexture();
-  doc.setDrawColor(...blue); doc.setLineWidth(2);
-  doc.rect(50, 40, PW-100, 100);
-  doc.setTextColor(20,20,20);
-  doc.setFont('helvetica','bold'); doc.setFontSize(20);
-  const coverTitleLines = doc.splitTextToSize(reportTitle, PW-160);
-  doc.text(coverTitleLines, PW/2, coverTitleLines.length>1 ? 72 : 85, {align:'center'});
-
-  const rows = [
-    ['Embarcação:', header.embarcacao||'-'],
-    ['Turma:', header.turma||'-'],
-    ['CMT || CFM:', header.cmtcfm||'-'],
-    ['Setor:', header.setor||'-'],
-    ['Período:', header.periodo||'-'],
-  ];
-  let ry = 190;
-  doc.setFont('helvetica','normal'); doc.setFontSize(12);
-  rows.forEach(([label,val])=>{
-    const valLines = doc.splitTextToSize(String(val), 330);
-    const rowH = Math.max(32, 16 + valLines.length*14);
-    doc.setFillColor(232,236,242);
-    doc.rect(140, ry-16, 500, rowH, 'F');
-    doc.setDrawColor(200,206,216);
-    doc.rect(140, ry-16, 500, rowH);
-    doc.setFont('helvetica','bold'); doc.setTextColor(...navy);
-    doc.text(label, 152, ry+5);
-    doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20);
-    doc.text(valLines, 280, ry+5);
-    ry += rowH;
-  });
-  drawSidebarCover();
-
-  // Page 2: Colaboradores
-  doc.addPage([780,540], 'landscape');
-  drawPageTexture();
-  doc.setDrawColor(...blue); doc.setLineWidth(2);
-  doc.rect(50, 40, PW-100, 60);
-  doc.setTextColor(...navy);
-  doc.setFont('helvetica','bold'); doc.setFontSize(18);
-  doc.text('Colaboradores', PW/2, 78, {align:'center'});
-
-  const names = (header.colaboradores||'').split(',').map(n=>n.trim()).filter(Boolean);
-  if(names.length === 0){
-    doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(...muted);
-    doc.text('Nenhum colaborador informado.', PW/2, 160, {align:'center'});
-  } else {
-    const rowH = 42;
-    const listW = 420;
-    const listX = (PW-listW)/2;
-    doc.setFont('helvetica','normal'); doc.setFontSize(20);
-    names.forEach((name, i)=>{
-      const by = 190 + i*rowH;
-      doc.setTextColor(...blue);
-      doc.text('•', listX, by);
-      doc.setTextColor(20,20,20);
-      doc.text(name, listX+22, by);
-    });
-  }
-  drawSidebarContent();
-
-  // group entries by task, preserving first-seen order; within task order Antes/Durante/Depois then time
-  const order = {Antes:0, Durante:1, Depois:2};
-  let taskOrder = [];
-  const byTask = {};
-  entries.forEach(e=>{
-    if(!byTask[e.task]){ byTask[e.task]=[]; taskOrder.push(e.task); }
-    byTask[e.task].push(e);
-  });
-  taskOrder.forEach(t=> byTask[t].sort((a,b)=> (a.ts-b.ts)));
-  taskOrder = applyTaskOrder(taskOrder, header.taskOrder);
-
-  // Page 3+: Lista de Atividades Realizadas (com quebra automática de página)
-  function drawTaskListPageHeader(isContinuation){
-    doc.addPage([780,540], 'landscape');
-    drawPageTexture();
-    doc.setTextColor(...blue);
-    doc.setFont('helvetica','bold'); doc.setFontSize(26);
-    const titleLines = isContinuation
-      ? ['LISTA DE ATIVIDADES', 'REALIZADAS (CONTINUAÇÃO)']
-      : ['LISTA DE ATIVIDADES', 'REALIZADAS'];
-    doc.text(titleLines[0], 40, 55);
-    doc.text(titleLines[1], 40, 90);
-  }
-
-  drawTaskListPageHeader(false);
-
-  const realTaskOrder = taskOrder.filter(t => !(byTask[t].length === 1 && byTask[t][0].isTextPage));
-
-  if(realTaskOrder.length === 0){
-    doc.setFont('helvetica','normal'); doc.setFontSize(12); doc.setTextColor(...muted);
-    doc.text('Nenhuma tarefa registrada.', PW/2, 160, {align:'center'});
-  } else {
-    const listW = 660;
-    const listX = 40;
-    const maxY = PH - 40;
-    let ty = 145;
-    doc.setFont('helvetica','normal'); doc.setFontSize(13);
-    realTaskOrder.forEach((task)=>{
-      const lines = doc.splitTextToSize(task || '(sem título)', listW-24);
-      const blockH = lines.length*17 + 6;
-      if(ty + blockH > maxY){
-        drawSidebarContent();
-        drawTaskListPageHeader(true);
-        ty = 145;
-      }
-      doc.setFont('helvetica','normal'); doc.setFontSize(13);
-      doc.setTextColor(60,60,60);
-      doc.text('•', listX, ty);
-      doc.setTextColor(20,20,20);
-      doc.text(lines, listX+16, ty);
-      ty += blockH;
-    });
-  }
-  drawSidebarContent();
-
-  const maxPhotosPerSlide = Math.min(4, Math.max(1, header.photosPerSlide || 2));
-
-  function chunkTaskEntries(taskEntries){
-    const chunks = [];
-    let current = [];
-    for(const entry of taskEntries){
-      if(current.length > 0 && (entry.pageBreakBefore || current.length >= maxPhotosPerSlide)){
-        chunks.push(current);
-        current = [];
-      }
-      current.push(entry);
-    }
-    if(current.length > 0) chunks.push(current);
-    return chunks;
-  }
-
-  for(const task of taskOrder){
-    const taskEntries = byTask[task];
-
-    // Standalone text page: its own dedicated page, styled like the rest of the report.
-    if(taskEntries.length === 1 && taskEntries[0].isTextPage){
-      const tp = taskEntries[0];
-      doc.addPage([780,540], 'landscape');
-      drawPageTexture();
-
-      // Title: same fixed two-line slot used by "LISTA DE ATIVIDADES REALIZADAS".
-      doc.setTextColor(...blue);
-      doc.setFont('helvetica','bold'); doc.setFontSize(26);
-      const rawTitleLines = doc.splitTextToSize((tp.pageTitle||'(sem título)').toUpperCase(), PW-80);
-      doc.text(rawTitleLines[0] || '', 40, 55);
-      if(rawTitleLines[1]) doc.text(rawTitleLines.slice(1).join(' '), 40, 90);
-
-      // Body: manually spaced lines for predictable, consistent alignment.
-      doc.setFont('helvetica','normal'); doc.setFontSize(13);
-      doc.setTextColor(20,20,20);
-      const bodyLineH = 19;
-      let by = rawTitleLines[1] ? 135 : 105;
-      const bodyLines = doc.splitTextToSize(tp.pageBody || '', PW-80);
-      bodyLines.forEach(line=>{
-        doc.text(line, 40, by);
-        by += bodyLineH;
-      });
-
-      drawSidebarContent();
-      continue;
-    }
-
-    for(const chunk of chunkTaskEntries(taskEntries)){
-      doc.addPage([780,540], 'landscape');
-      drawPageTexture();
-      // title
-      doc.setTextColor(...blue);
-      doc.setFont('helvetica','normal'); doc.setFontSize(26);
-      doc.text('REGISTRO FOTOGRÁFICO', 40, 55);
-      doc.setDrawColor(...blue); doc.setLineWidth(1.5);
-      doc.line(40, 66, PW-60, 66);
-
-      // task box — width adapts to the text: narrow for short tasks, up to a max width
-      // for long ones (which then wrap to more than one line).
-      doc.setFont('helvetica','bold'); doc.setFontSize(13);
-      const taskText = task || '(sem título)';
-      const maxBoxW = PW - 100;
-      const boxPadH = 24;
-      const maxTaskTextW = maxBoxW - boxPadH;
-      const singleLineW = doc.getTextWidth(taskText);
-      let taskLines, boxW;
-      if(singleLineW <= maxTaskTextW){
-        taskLines = [taskText];
-        boxW = Math.max(120, singleLineW + boxPadH);
-      } else {
-        taskLines = doc.splitTextToSize(taskText, maxTaskTextW);
-        boxW = maxBoxW;
-      }
-      const boxX = (PW - boxW) / 2;
-      const taskLineH = 16;
-      const boxPadV = 14;
-      const boxH = taskLines.length*taskLineH + boxPadV*2;
-      doc.setDrawColor(...blue); doc.setLineWidth(1);
-      doc.rect(boxX, 78, boxW, boxH);
-      doc.setTextColor(20,20,20);
-      const taskTextY = 78 + boxPadV + taskLineH*0.72;
-      doc.text(taskLines, PW/2, taskTextY, {align:'center'});
-
-      const areaTop = 78 + boxH + 8;
-      const areaBottom = PH - 20;
-      const areaH = areaBottom - areaTop;
-      const labelH = 22, labelGap = 8;
-      const pageMode = chunk[0].pageMode === 'text' ? 'text' : 'tags';
-
-      if(pageMode === 'text'){
-        // Single free-text note for the whole page, instead of per-photo labels
-        doc.setFont('helvetica','bold'); doc.setFontSize(12);
-        const noteText = (chunk[0].pageText || '').trim() || ' ';
-        const noteLines = doc.splitTextToSize(noteText, PW-120);
-        const noteBoxH = Math.max(30, noteLines.length*15 + 16);
-        const photosAreaH = areaH - noteBoxH - 10;
-
-        const cols = chunk.length === 4 ? 2 : chunk.length;
-        const rows = Math.ceil(chunk.length / cols);
-        const gap = 10;
-        const cellW = (PW - 80 - gap*(cols-1)) / cols;
-        const cellH = (photosAreaH - gap*(rows-1)) / rows;
-
-        chunk.forEach((entry, idx)=>{
-          const col = idx % cols;
-          const row = Math.floor(idx / cols);
-          const cellX = 40 + col*(cellW+gap);
-          const cellY = areaTop + row*(cellH+gap);
-          try{
-            const ratio = Math.min(cellW/entry.w, cellH/entry.h);
-            const iw = entry.w*ratio, ih = entry.h*ratio;
-            const ix = cellX + (cellW-iw)/2;
-            const iy = cellY + (cellH-ih)/2;
-            doc.addImage(entry.photo, 'JPEG', ix, iy, iw, ih);
-            doc.setDrawColor(122,155,196); doc.setLineWidth(0.75);
-            doc.rect(ix, iy, iw, ih);
-          }catch(err){ console.error('img err', err); }
-        });
-
-        const noteY = areaTop + photosAreaH + 10;
-        doc.setDrawColor(...blue); doc.setLineWidth(1);
-        doc.rect(40, noteY, PW-80, noteBoxH);
-        doc.setTextColor(20,20,20); doc.setFont('helvetica','bold'); doc.setFontSize(12);
-        doc.text(noteLines, PW/2, noteY + noteBoxH/2 - (noteLines.length-1)*7 + 4, {align:'center'});
-      } else {
-        // Grid: 1 -> 1x1; 2 -> 1x2 (uma linha); 3 -> 1x3 (uma linha); 4 -> 2x2
-        const cols = chunk.length === 4 ? 2 : chunk.length;
-        const rows = Math.ceil(chunk.length / cols);
-        const gap = 10;
-        const cellW = (PW - 80 - gap*(cols-1)) / cols;
-        const cellH = (areaH - gap*(rows-1)) / rows;
-        const labelFontSize = chunk.length<=2 ? 12 : 10.5;
-        const lineH = chunk.length<=2 ? 14 : 12;
-        const labelPadW = chunk.length<=2 ? 24 : 18;
-        const maxLabelTextW = cellW - labelPadW - 4;
-
-        // Wrap every label first so all cells in this page reserve the same vertical space
-        // for the tallest caption (keeps the grid aligned and never lets text spill into
-        // the neighbouring photo — the box grows downward instead).
-        doc.setFont('helvetica','bold'); doc.setFontSize(labelFontSize);
-        const wrappedLabels = chunk.map(entry => doc.splitTextToSize(phaseLabel(entry), maxLabelTextW));
-        const maxLines = Math.max(1, ...wrappedLabels.map(l => l.length));
-        const labelH = maxLines*lineH + 10;
-        const maxImgH = cellH - labelH - labelGap;
-
-        chunk.forEach((entry, idx)=>{
-          const col = idx % cols;
-          const row = Math.floor(idx / cols);
-          const cellX = 40 + col*(cellW+gap);
-          const cellY = areaTop + row*(cellH+gap);
-          try{
-            const ratio = Math.min(cellW/entry.w, maxImgH/entry.h);
-            const iw = entry.w*ratio, ih = entry.h*ratio;
-            const blockH = ih + labelGap + labelH;
-            const blockTop = cellY + (cellH-blockH)/2;
-            const ix = cellX + (cellW-iw)/2;
-            doc.addImage(entry.photo, 'JPEG', ix, blockTop, iw, ih);
-            doc.setDrawColor(122,155,196); doc.setLineWidth(0.75);
-            doc.rect(ix, blockTop, iw, ih);
-
-            doc.setDrawColor(...blue); doc.setLineWidth(1);
-            const lines = wrappedLabels[idx];
-            doc.setFont('helvetica','bold'); doc.setFontSize(labelFontSize);
-            const lw = Math.min(cellW-4, Math.max(...lines.map(l=>doc.getTextWidth(l))) + labelPadW);
-            const lx = cellX + (cellW-lw)/2;
-            const labelRectY = blockTop + ih + labelGap;
-            doc.rect(lx, labelRectY, lw, labelH);
-            doc.setTextColor(20,20,20);
-            const textY = labelRectY + labelH/2 - (lines.length-1)*lineH/2 + 4;
-            doc.text(lines, cellX+cellW/2, textY, {align:'center'});
-          }catch(err){ console.error('img err', err); }
-        });
-      }
-
-      // sidebar stripes (matching original template exactly)
-      drawSidebarContent();
-
-      const authors = [...new Set(chunk.map(e=>e.author).filter(Boolean))];
-      if(authors.length){
-        doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(...muted);
-        doc.text(`Registrado por: ${authors.join(', ')}`, 40, PH-14);
-      }
-    }
-  }
-
-  const fname = `Relatorio_${slugify(header.embarcacao)}_${slugify(header.turma)}.pdf`;
-  return {doc, fname};
-}
-
-async function showPdfPreview(reportId){
-  const result = await buildPDFDoc(reportId);
-  if(!result) return;
-  const { doc, fname } = result;
-  const blobUrl = doc.output('bloburl');
-  state.pdfPreview = { doc, fname, blobUrl };
-
-  const overlay = document.createElement('div');
-  overlay.id = 'pdf-preview-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,14,24,.92);z-index:200;display:flex;flex-direction:column;';
-  overlay.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--navy);color:#fff;flex:none;">
-      <div style="font-weight:700;font-size:15px;">Pré-visualização do relatório</div>
-      <button id="pdf-preview-close" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;line-height:1;">✕</button>
-    </div>
-    <iframe src="${blobUrl}" style="flex:1;border:none;width:100%;background:#525659;"></iframe>
-    <div style="padding:14px 18px;background:var(--bg);display:flex;gap:10px;flex:none;">
-      <button class="btn btn-ghost" id="pdf-preview-close-2" style="flex:1;">Fechar</button>
-      <button class="btn btn-primary" id="pdf-preview-download" style="flex:1.4;">⬇ Baixar PDF</button>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-  const close = ()=>{
-    const el = document.getElementById('pdf-preview-overlay');
-    if(el) el.remove();
-    if(state.pdfPreview && state.pdfPreview.blobUrl) URL.revokeObjectURL(state.pdfPreview.blobUrl);
-    state.pdfPreview = null;
-  };
-  document.getElementById('pdf-preview-close').onclick = close;
-  document.getElementById('pdf-preview-close-2').onclick = close;
-  document.getElementById('pdf-preview-download').onclick = ()=>{
-    state.pdfPreview.doc.save(state.pdfPreview.fname);
-  };
-}
-
-// ---------- Rendering ----------
-
-const app = document.getElementById('app');
 
 function render(){
-  if(state.screen === 'access-request') return renderAccessRequest();
-  if(state.screen === 'access-pending') return renderAccessPending();
-  if(state.screen === 'access-denied') return renderAccessDenied();
-  if(state.screen === 'admin-login') return renderAdminLogin();
-  if(state.screen === 'admin-access') return renderAdminAccess();
-  if(state.screen === 'home') return renderHome();
-  if(state.screen === 'new') return renderNew();
-  if(state.screen === 'edit-header') return renderEditHeader();
-  if(state.screen === 'report') return renderReport();
-  if(state.screen === 'add') return renderAdd();
-  if(state.screen === 'edit-entry') return renderEditEntry();
-  if(state.screen === 'move-task-report') return renderMoveTaskReport();
-  if(state.screen === 'add-textpage') return renderAddTextPage();
+  document.getElementById("app").className=(sel||mode==="newReport")?"detail":"";
+  renderSide();renderMain();
 }
 
-function goToAdminLogin(){
-  state.screen = localStorage.getItem('adminAuthed') === '1' ? 'admin-access' : 'admin-login';
+function compress(file){
+  return new Promise(function(res,rej){
+    var fr=new FileReader();
+    fr.onload=function(){
+      var im=new Image();
+      im.onload=function(){
+        var w=im.width,h=im.height,m=1100;
+        if(w>m){h=Math.round(h*m/w);w=m}
+        var c=document.createElement("canvas");c.width=w;c.height=h;
+        c.getContext("2d").drawImage(im,0,0,w,h);
+        res({data:c.toDataURL("image/jpeg",0.75),w:w,h:h});
+      };
+      im.onerror=rej;im.src=fr.result;
+    };
+    fr.onerror=rej;fr.readAsDataURL(file);
+  });
+}
+
+function val(id){return document.getElementById(id).value.trim()}
+
+function makePdf(r){
+  var J=window.jspdf&&window.jspdf.jsPDF;
+  if(!J){err="";msg="";alert("A biblioteca de PDF não carregou. Verifique a conexão e tente de novo.");return false}
+  var d=new J({orientation:"landscape",unit:"pt",format:[780,540]});
+  function bars(){
+    d.setFillColor(255,106,0);d.rect(762,0,18,125,"F");
+    d.setFillColor(63,90,140);d.rect(762,125,18,415,"F");
+  }
+  function heading(t,y){d.setFont("helvetica","bold");d.setFontSize(22);d.setTextColor(68,114,196);d.text(t,60,y)}
+  bars();
+  d.setDrawColor(68,114,196);d.setLineWidth(1);d.rect(40,30,640,80);
+  d.setFont("helvetica","bold");d.setFontSize(22);d.setTextColor(31,47,79);
+  d.text("Relatório Fotográfico - "+r.title,360,78,{align:"center",maxWidth:600});
+  var rows=[["Embarcação:",r.vessel],["Turma:",r.turma],["CMT || CFM:",r.cmt],["Setor:",r.setor],["Período:",r.periodo||"-"]];
+  rows.forEach(function(row,i){
+    var y=150+i*46;
+    d.setFillColor(i%2?255:232,i%2?255:238,i%2?255:245);d.setDrawColor(213,220,232);d.rect(100,y,520,42,"FD");
+    d.setFont("helvetica","bold");d.setFontSize(13);d.setTextColor(31,47,79);d.text(row[0],115,y+26);
+    d.setFont("helvetica","normal");d.text(String(row[1]||"-"),250,y+26,{maxWidth:360});
+  });
+  d.addPage();bars();heading("Colaboradores",70);
+  d.setFont("helvetica","normal");d.setFontSize(16);d.setTextColor(31,47,79);
+  r.colaboradores.forEach(function(c,i){d.text("•  "+c,80,125+i*30)});
+  d.addPage();bars();heading("LISTA DE ATIVIDADES REALIZADAS",70);
+  var tasks=[];r.pages.forEach(function(p){if(tasks.indexOf(p.task)<0){tasks.push(p.task)}});
+  d.setFont("helvetica","normal");d.setFontSize(12);d.setTextColor(31,47,79);
+  var y=115;
+  tasks.forEach(function(t){
+    var lines=d.splitTextToSize("•  "+t.toUpperCase(),640);
+    if(y+lines.length*16>510){d.addPage();bars();y=60}
+    d.text(lines,70,y);y+=lines.length*16+6;
+  });
+  var LBL={Antes:"ANTES DA ATIVIDADE",Durante:"DURANTE A ATIVIDADE",Depois:"DEPOIS DA ATIVIDADE"};
+  r.pages.forEach(function(p){
+    d.addPage();bars();
+    d.setFont("helvetica","normal");d.setFontSize(30);d.setTextColor(68,114,196);d.text("REGISTRO FOTOGRÁFICO",50,52);
+    d.setDrawColor(68,114,196);d.setLineWidth(1.5);d.line(50,64,740,64);
+    d.setLineWidth(1);d.rect(120,78,520,36);
+    d.setFont("helvetica","bold");d.setFontSize(12);d.setTextColor(31,47,79);
+    var tl=d.splitTextToSize(p.task.toUpperCase(),500).slice(0,2);
+    d.text(tl,380,tl.length>1?93:101,{align:"center"});
+    var bw=600,bh=330,sc=Math.min(bw/p.w,bh/p.h),iw=p.w*sc,ih=p.h*sc,ix=380-iw/2,iy=125+(bh-ih)/2;
+    d.addImage(p.img,"JPEG",ix,iy,iw,ih);
+    d.setDrawColor(68,114,196);d.rect(ix,iy,iw,ih);
+    d.rect(280,470,200,30);
+    d.setFont("helvetica","bold");d.setFontSize(12);d.setTextColor(31,47,79);d.text(LBL[p.phase]||p.phase,380,490,{align:"center"});
+  });
+  var name="Relatorio_"+slug(r.title)+".pdf";
+  d.save(name);
+  return name;
+}
+
+document.addEventListener("click",function(e){
+  var b=e.target.closest("[data-act]");if(!b){return}
+  var a=b.getAttribute("data-act"),r=cur();
+  if(a==="new"){mode="newReport";sel=null;msg="";err=""}
+  else if(a==="open"){sel=b.getAttribute("data-id");pg=0;mode="view";msg="";err=""}
+  else if(a==="back"){sel=null;mode="view"}
+  else if(a==="edit"){mode="editHeader";msg="";err=""}
+  else if(a==="cancel"){mode="view";err=""}
+  else if(a==="save-header"){
+    var t=val("f-title");
+    if(!t){err="Digite um nome para o relatório.";render();return}
+    var o={title:t,vessel:val("f-vessel"),turma:val("f-turma"),cmt:val("f-cmt"),setor:val("f-setor"),periodo:val("f-periodo"),colaboradores:document.getElementById("f-col").value.split("\n").map(function(x){return x.trim()}).filter(Boolean)};
+    if(mode==="newReport"){o.id=uid();o.pages=[];S.reports.unshift(o);sel=o.id;pg=0;msg="Relatório criado"}
+    else{for(var k in o){r[k]=o[k]}msg="Cabeçalho salvo"}
+    mode="view";err="";persist();
+  }
+  else if(a==="pdf"){
+    var n=makePdf(r);
+    if(n){msg="PDF gerado: "+n}
+  }
+  else if(a==="prev"){pg=(pg-1+r.pages.length)%r.pages.length;msg=""}
+  else if(a==="next"){pg=(pg+1)%r.pages.length;msg=""}
+  else if(a==="photo"){document.getElementById("file").click();return}
+  else if(a==="cancel-photo"){pending=null;mode="view";err=""}
+  else if(a==="save-photo"){
+    var task=val("p-task");
+    if(!task){err="Descreva a tarefa desta foto.";render();return}
+    r.pages.push({id:uid(),task:task,phase:document.getElementById("p-phase").value,img:pending.data,w:pending.w,h:pending.h});
+    pg=r.pages.length-1;pending=null;mode="view";err="";msg="Foto salva";persist();
+  }
+  else if(a==="del-page"){
+    if(!confirm("Excluir esta página do relatório?")){return}
+    r.pages.splice(pg,1);if(pg>0){pg--}msg="";persist();
+  }
+  else if(a==="del-report"){
+    if(!confirm("Excluir o relatório inteiro? Essa ação não pode ser desfeita.")){return}
+    S.reports=S.reports.filter(function(x){return x.id!==sel});sel=null;mode="view";msg="";persist();
+  }
   render();
-}
+});
 
-function renderAccessRequest(){
-  app.innerHTML = `
-    <header class="topbar" style="position:relative;">
-      <div class="stripe"></div>
-      <div>
-        <h1>Registro Fotográfico</h1>
-        <div class="sub">Acesso restrito</div>
-      </div>
-      <button id="btn-goto-admin" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:20px;padding:8px;cursor:pointer;">☰</button>
-    </header>
-    <main>
-      <div class="card">
-        <h2>Solicitar acesso</h2>
-        <div class="hint" style="margin-bottom:10px;">Esse app é de uso restrito à equipe. Informe seu nome para pedir acesso.</div>
-        <label>Seu nome</label>
-        <input type="text" id="f-request-name" placeholder="Ex: João Silva">
-        <div class="btn-row">
-          <button class="btn btn-primary" id="btn-request-access">Solicitar acesso</button>
-        </div>
-      </div>
-    </main>
-  `;
-  document.getElementById('btn-goto-admin').onclick = goToAdminLogin;
-  document.getElementById('btn-request-access').onclick = async ()=>{
-    const name = document.getElementById('f-request-name').value.trim();
-    if(!name){ showToast('Informe seu nome.'); return; }
-    const btn = document.getElementById('btn-request-access');
-    btn.innerHTML = '<span class="spinner"></span> Enviando…'; btn.disabled = true;
-    try{
-      const id = await submitAccessRequest(name);
-      localStorage.setItem('accessRequestId', id);
-      localStorage.setItem('accessRequestName', name);
-      state.screen = 'access-pending';
-      render();
-    }catch(e){
-      console.error(e); showToast('Erro ao enviar solicitação.');
-      btn.innerHTML = 'Solicitar acesso'; btn.disabled = false;
-    }
-  };
-}
+document.getElementById("file").addEventListener("change",function(ev){
+  var f=ev.target.files&&ev.target.files[0];if(!f){return}
+  compress(f).then(function(c){pending=c;mode="addPhoto";err="";msg="";render()}).catch(function(){alert("Não foi possível ler essa foto. Tente outra.")});
+  ev.target.value="";
+});
 
-function renderAccessPending(){
-  const name = localStorage.getItem('accessRequestName') || '';
-  app.innerHTML = `
-    <header class="topbar" style="position:relative;">
-      <div class="stripe"></div>
-      <div>
-        <h1>Registro Fotográfico</h1>
-        <div class="sub">Acesso restrito</div>
-      </div>
-      <button id="btn-goto-admin" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:20px;padding:8px;cursor:pointer;">☰</button>
-    </header>
-    <main>
-      <div class="empty">
-        <div class="big">⏳</div>
-        Solicitação enviada${name ? ` como <b>${escapeHtml(name)}</b>` : ''}.<br>
-        Aguardando aprovação de um administrador.
-      </div>
-      <div class="btn-row" style="margin-top:14px;">
-        <button class="btn btn-ghost" id="btn-check-access">Verificar novamente</button>
-      </div>
-    </main>
-  `;
-  document.getElementById('btn-goto-admin').onclick = ()=>{
-    if(state.accessPollTimer){ clearInterval(state.accessPollTimer); state.accessPollTimer = null; }
-    goToAdminLogin();
-  };
-  document.getElementById('btn-check-access').onclick = ()=> checkAccessStatus(true);
-
-  if(state.accessPollTimer) clearInterval(state.accessPollTimer);
-  state.accessPollTimer = setInterval(()=> checkAccessStatus(false), 8000);
-}
-
-function renderAccessDenied(){
-  if(state.accessPollTimer){ clearInterval(state.accessPollTimer); state.accessPollTimer = null; }
-  app.innerHTML = `
-    <header class="topbar">
-      <div class="stripe"></div>
-      <div>
-        <h1>Registro Fotográfico</h1>
-        <div class="sub">Acesso restrito</div>
-      </div>
-    </header>
-    <main>
-      <div class="empty">
-        <div class="big">🚫</div>
-        Seu pedido de acesso foi negado.<br>
-        Fale com um administrador se acha que isso é um engano.
-      </div>
-    </main>
-  `;
-}
-
-async function checkAccessStatus(manual){
-  const reqId = localStorage.getItem('accessRequestId');
-  if(!reqId) return;
-  try{
-    const reqDoc = await getAccessRequest(reqId);
-    if(reqDoc && reqDoc.status === 'approved'){
-      if(state.accessPollTimer){ clearInterval(state.accessPollTimer); state.accessPollTimer = null; }
-      localStorage.setItem('accessApproved', '1');
-      state.screen = 'home';
-      await loadAuthorName();
-      render();
-    } else if(reqDoc && reqDoc.status === 'denied'){
-      state.screen = 'access-denied';
-      render();
-    } else if(manual){
-      showToast('Ainda aguardando aprovação.');
-    }
-  }catch(e){ console.error(e); if(manual) showToast('Erro ao verificar.'); }
-}
-
-function renderAdminLogin(){
-  app.innerHTML = `
-    <header class="topbar">
-      <div class="stripe"></div>
-      <div>
-        <h1>Painel de admin</h1>
-        <div class="sub">Área restrita</div>
-      </div>
-    </header>
-    <main>
-      <div class="card">
-        <label>Senha de administrador</label>
-        <input type="password" id="f-admin-pass" placeholder="Digite a senha">
-        <div class="btn-row">
-          <button class="btn btn-primary" id="btn-admin-login">Entrar</button>
-        </div>
-      </div>
-    </main>
-  `;
-  const input = document.getElementById('f-admin-pass');
-  const tryLogin = ()=>{
-    if(input.value === ADMIN_PASSWORD){
-      localStorage.setItem('adminAuthed', '1');
-      state.screen = 'admin-access';
-      render();
-    } else {
-      showToast('Senha incorreta.');
-    }
-  };
-  document.getElementById('btn-admin-login').onclick = tryLogin;
-  input.onkeydown = (e)=>{ if(e.key === 'Enter') tryLogin(); };
-  input.focus();
-}
-
-function renderAdminAccess(){
-  app.innerHTML = `
-    <header class="topbar">
-      <button class="back" id="btn-back-admin">←</button>
-      <div>
-        <h1>Aprovações de acesso</h1>
-        <div class="sub">Painel do administrador</div>
-      </div>
-    </header>
-    <main id="main"></main>
-  `;
-  document.getElementById('btn-back-admin').onclick = ()=>{ state.screen = 'home'; render(); };
-  const main = document.getElementById('main');
-  main.innerHTML = `<div class="empty"><div class="big">⏳</div>Carregando pedidos…</div>`;
-  fetchAllAccessRequests().then(list=>{
-    if(list.length === 0){
-      main.innerHTML = `<div class="empty"><div class="big">📭</div>Nenhum pedido de acesso ainda.</div>`;
-      return;
-    }
-    const statusLabel = { pending: 'Pendente', approved: 'Aprovado', denied: 'Negado' };
-    const statusColor = { pending: 'var(--orange)', approved: '#1E7B4D', denied: 'var(--danger)' };
-    main.innerHTML = `<div class="card">` + list.map(r=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:14px;color:var(--navy);">${escapeHtml(r.name||'(sem nome)')}</div>
-          <div style="font-size:11.5px;color:${statusColor[r.status]||'var(--muted)'};font-weight:700;">${statusLabel[r.status]||r.status}</div>
-        </div>
-        ${r.status !== 'approved' ? `<button class="btn-sm btn-ghost approve-req" data-id="${r.id}" style="padding:6px 10px;">Aprovar</button>` : ''}
-        ${r.status !== 'denied' ? `<button class="btn-sm btn-danger-ghost deny-req" data-id="${r.id}" style="padding:6px 10px;">${r.status === 'approved' ? 'Revogar acesso' : 'Negar'}</button>` : ''}
-      </div>
-    `).join('') + `</div>`;
-
-    main.querySelectorAll('.approve-req').forEach(btn=>{
-      btn.onclick = async ()=>{
-        btn.disabled = true;
-        try{ await setAccessRequestStatus(btn.getAttribute('data-id'), 'approved'); showToast('Acesso aprovado!'); renderAdminAccess(); }
-        catch(e){ console.error(e); showToast('Erro ao aprovar.'); btn.disabled = false; }
-      };
-    });
-    main.querySelectorAll('.deny-req').forEach(btn=>{
-      btn.onclick = async ()=>{
-        btn.disabled = true;
-        try{ await setAccessRequestStatus(btn.getAttribute('data-id'), 'denied'); showToast('Acesso negado.'); renderAdminAccess(); }
-        catch(e){ console.error(e); showToast('Erro ao negar.'); btn.disabled = false; }
-      };
-    });
-  });
-}
-
-function renderHome(){
-  app.innerHTML = `
-    <header class="topbar" style="position:relative;">
-      <div class="stripe"></div>
-      <div>
-        <h1>Registro Fotográfico</h1>
-        <div class="sub">Relatórios semanais de atividades</div>
-      </div>
-      <button id="btn-goto-admin" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:20px;padding:8px;cursor:pointer;">☰</button>
-    </header>
-    <main id="main"></main>
-    <div class="fab-bar"><div class="fab-bar-inner">
-      <button class="btn btn-primary" id="btn-new">+ Novo relatório semanal</button>
-    </div></div>
-  `;
-  document.getElementById('btn-goto-admin').onclick = goToAdminLogin;
-  document.getElementById('btn-new').onclick = ()=>{ state.screen='new'; render(); };
-  const main = document.getElementById('main');
-  main.innerHTML = `<div class="empty"><div class="big">⏳</div>Carregando relatórios…</div>`;
-
-  const setorOrder = ['Máquinas', 'Passadiço', 'Embarcação'];
-
-  function reportItemHtml(r){
-    return `
-      <div class="report-item" data-id="${r.id}">
-        <div class="ri-left">
-          <div class="ri-title">${escapeHtml(r.header.embarcacao)} — ${escapeHtml(r.header.turma)}</div>
-          <div class="ri-sub">${escapeHtml(r.header.periodo||'')}</div>
-        </div>
-        <div class="ri-count">${r.count} 📷</div>
-        <button class="ri-del" data-id="${r.id}" style="background:none;border:none;color:var(--danger);font-size:18px;padding:6px;cursor:pointer;flex:none;">✕</button>
-      </div>
-    `;
-  }
-
-  fetchReports().then(reports=>{
-    state.reports = reports;
-    if(reports.length === 0){
-      main.innerHTML = `<div class="empty"><div class="big">📷</div>Nenhum relatório ainda.<br>Toque em "Novo relatório semanal" para começar.</div>`;
-      return;
-    }
-
-    // Level 1: setor (departamento)
-    const bySetorTop = {};
-    setorOrder.forEach(s=> bySetorTop[s] = []);
-    const outrosTop = [];
-    reports.forEach(r=>{
-      const s = r.header.setor;
-      if(s && bySetorTop[s]) bySetorTop[s].push(r);
-      else outrosTop.push(r);
-    });
-
-    let html = '';
-    const renderTituloGroup = (list)=>{
-      // Level 2: título do relatório
-      const byTitulo = {};
-      const tituloOrder = [];
-      list.forEach(r=>{
-        const t = (r.header.tituloRelatorio || 'Relatório Fotográfico').trim() || 'Relatório Fotográfico';
-        if(!byTitulo[t]){ byTitulo[t] = []; tituloOrder.push(t); }
-        byTitulo[t].push(r);
-      });
-      tituloOrder.sort((a,b)=> a.localeCompare(b, 'pt-BR'));
-
-      let out = '';
-      tituloOrder.forEach(titulo=>{
-        out += `<div style="font-weight:600;font-size:13.5px;color:var(--blue);margin:10px 0 6px;padding-left:2px;">${escapeHtml(titulo)}</div>`;
-        // Level 3: mais novo para o mais antigo, pela data real de criação do relatório
-        const sorted = [...byTitulo[titulo]].sort((a,b)=> (b.header.criadoEm||0) - (a.header.criadoEm||0));
-        out += sorted.map(reportItemHtml).join('');
-      });
-      return out;
-    };
-
-    setorOrder.forEach(setor=>{
-      if(bySetorTop[setor].length === 0) return;
-      html += `<div style="font-weight:700;font-size:15px;color:var(--navy);margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--blue);">${escapeHtml(setor)}</div>`;
-      html += renderTituloGroup(bySetorTop[setor]);
-    });
-    if(outrosTop.length > 0){
-      html += `<div style="font-weight:700;font-size:15px;color:var(--navy);margin:16px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--blue);">Outros</div>`;
-      html += renderTituloGroup(outrosTop);
-    }
-
-    html += `<div style="text-align:center;font-size:10.5px;color:var(--muted);margin-top:24px;padding-bottom:8px;">© 2026 Bram Power · uso interno</div>`;
-    main.innerHTML = html;
-
-    main.querySelectorAll('.report-item').forEach(el=>{
-      el.onclick = (ev)=>{
-        if(ev.target.closest('.ri-del')) return;
-        openReport(el.getAttribute('data-id'));
-      };
-    });
-    main.querySelectorAll('.ri-del').forEach(btn=>{
-      btn.onclick = async (ev)=>{
-        ev.stopPropagation();
-        const id = btn.getAttribute('data-id');
-        const r = state.reports.find(x=>x.id===id);
-        const label = r ? `${r.header.embarcacao} — ${r.header.turma} (${r.header.periodo||''})` : 'este relatório';
-        if(!confirm(`Excluir "${label}"? Isso apaga todas as fotos dele e não pode ser desfeito.`)) return;
-        btn.disabled = true;
-        try{
-          await deleteReport(id);
-          showToast('Relatório excluído.');
-          renderHome();
-        }catch(e){
-          console.error(e); showToast('Erro ao excluir.'); btn.disabled = false;
-        }
-      };
-    });
-  });
-}
-
-function renderNew(){ renderHeaderForm('new'); }
-function renderEditHeader(){ renderHeaderForm('edit'); }
-
-function renderHeaderForm(mode){
-  const isEdit = mode === 'edit';
-  const h = isEdit ? state.currentHeader : {};
-  app.innerHTML = `
-    <header class="topbar">
-      <button class="back" id="btn-back">←</button>
-      <div>
-        <h1>${isEdit ? 'Editar cabeçalho' : 'Novo relatório'}</h1>
-        <div class="sub">Dados da capa</div>
-      </div>
-    </header>
-    <main>
-      <div class="card">
-        <label>Título do relatório (capa)</label>
-        <input type="text" id="f-titulo" placeholder="Ex: Relatório Fotográfico" value="${escapeHtml(h.tituloRelatorio !== undefined ? h.tituloRelatorio : 'Relatório Fotográfico')}">
-        <div class="hint">Esse texto aparece na primeira página do PDF. Pode apagar ou trocar como quiser.</div>
-        <label>Embarcação</label>
-        <input type="text" id="f-embarcacao" placeholder="Ex: Bram Power" value="${escapeHtml(h.embarcacao||'')}">
-        <label>Turma</label>
-        <input type="text" id="f-turma" placeholder="Ex: Turma B" value="${escapeHtml(h.turma||'')}">
-        <label>CMT || CFM</label>
-        <input type="text" id="f-cmtcfm" placeholder="Ex: CMT Lukas Caceres / CHM Romulo Veloso" value="${escapeHtml(h.cmtcfm||'')}">
-        <label>Setor</label>
-        <div class="phase-choice" id="setor-choice">
-          <button type="button" class="phase-btn${h.setor==='Máquinas'?' active-Durante':''}" data-setor="Máquinas">Máquinas</button>
-          <button type="button" class="phase-btn${h.setor==='Passadiço'?' active-Durante':''}" data-setor="Passadiço">Passadiço</button>
-          <button type="button" class="phase-btn${h.setor==='Embarcação'?' active-Durante':''}" data-setor="Embarcação">Embarcação</button>
-        </div>
-        <label>Período</label>
-        <input type="text" id="f-periodo" placeholder="Ex: 04/09/24 a 11/09/24" value="${escapeHtml(h.periodo||'')}">
-        <label>Colaboradores</label>
-        <input type="text" id="f-colaboradores" placeholder="Ex: João Silva, Maria Souza, Pedro Lima" value="${escapeHtml(h.colaboradores||'')}">
-        <div class="hint">Separe os nomes por vírgula.</div>
-
-        <label>Fotos por página no PDF</label>
-        <div class="phase-choice" id="ppp-choice">
-          ${[1,2,3,4].map(n=>`<button type="button" class="phase-btn${(h.photosPerSlide||2)===n?' active-Durante':''}" data-ppp="${n}">${n}</button>`).join('')}
-        </div>
-        <div class="hint">Quantas fotos aparecem juntas em cada página do relatório (máximo 4).</div>
-
-        <div class="btn-row">
-          <button class="btn btn-primary" id="btn-save-header">${isEdit ? 'Salvar alterações' : 'Criar relatório'}</button>
-        </div>
-      </div>
-      ${isEdit ? `
-      <div class="card">
-        <h2>Zona de risco</h2>
-        <div class="hint" style="margin-bottom:10px;">Isso apaga o relatório inteiro e todas as fotos dele. Não pode ser desfeito.</div>
-        <button class="btn btn-danger-ghost" id="btn-delete-report">Excluir este relatório</button>
-      </div>
-      ` : ''}
-    </main>
-  `;
-  document.getElementById('btn-back').onclick = ()=>{
-    state.screen = isEdit ? 'report' : 'home'; render();
-    if(isEdit) renderReportBody();
-  };
-  let selectedSetor = h.setor || null;
-  document.querySelectorAll('#setor-choice .phase-btn').forEach(btn=>{
-    btn.onclick = ()=>{
-      selectedSetor = btn.getAttribute('data-setor');
-      document.querySelectorAll('#setor-choice .phase-btn').forEach(b=>b.className='phase-btn');
-      btn.className = 'phase-btn active-Durante';
-    };
-  });
-  let selectedPpp = h.photosPerSlide || 2;
-  document.querySelectorAll('#ppp-choice .phase-btn').forEach(btn=>{
-    btn.onclick = ()=>{
-      selectedPpp = Number(btn.getAttribute('data-ppp'));
-      document.querySelectorAll('#ppp-choice .phase-btn').forEach(b=>b.className='phase-btn');
-      btn.className = 'phase-btn active-Durante';
-    };
-  });
-  if(isEdit){
-    document.getElementById('btn-delete-report').onclick = async ()=>{
-      const label = `${h.embarcacao} — ${h.turma} (${h.periodo||''})`;
-      if(!confirm(`Excluir "${label}"? Isso apaga todas as fotos dele e não pode ser desfeito.`)) return;
-      const btn = document.getElementById('btn-delete-report');
-      btn.innerHTML = '<span class="spinner"></span> Excluindo…'; btn.disabled = true;
-      try{
-        await deleteReport(state.currentReportId);
-        showToast('Relatório excluído.');
-        state.currentReportId = null;
-        state.screen = 'home';
-        render();
-      }catch(e){
-        console.error(e); showToast('Erro ao excluir.');
-        btn.innerHTML = 'Excluir este relatório'; btn.disabled = false;
-      }
-    };
-  }
-  document.getElementById('btn-save-header').onclick = async ()=>{
-    if(!selectedSetor){ showToast('Selecione o setor.'); return; }
-    const data = {
-      tituloRelatorio: document.getElementById('f-titulo').value.trim(),
-      embarcacao: document.getElementById('f-embarcacao').value.trim(),
-      turma: document.getElementById('f-turma').value.trim(),
-      cmtcfm: document.getElementById('f-cmtcfm').value.trim(),
-      setor: selectedSetor,
-      periodo: document.getElementById('f-periodo').value.trim(),
-      colaboradores: document.getElementById('f-colaboradores').value.trim(),
-      photosPerSlide: selectedPpp,
-    };
-    if(!data.embarcacao || !data.periodo){ showToast('Preencha ao menos Embarcação e Período.'); return; }
-    const btn = document.getElementById('btn-save-header');
-    btn.innerHTML = '<span class="spinner"></span> Salvando…'; btn.disabled = true;
-    try{
-      if(isEdit){
-        await updateReportHeader(state.currentReportId, data);
-        showToast('Cabeçalho atualizado!');
-        await openReport(state.currentReportId);
-      } else {
-        const id = await createReport(data);
-        showToast('Relatório criado!');
-        await openReport(id);
-      }
-    }catch(e){
-      console.error(e); showToast('Erro ao salvar.'); btn.innerHTML = isEdit?'Salvar alterações':'Criar relatório'; btn.disabled=false;
-    }
-  };
-}
-
-async function openReport(id){
-  state.currentReportId = id;
-  state.screen = 'report';
+dbGet().then(function(v){
+  if(v&&v.reports){S=v}
+  if(S.reports.length&&window.matchMedia("(min-width:800px)").matches){sel=S.reports[0].id}
   render();
-  const main = document.getElementById('main');
-  main.innerHTML = `<div class="empty"><div class="big">⏳</div>Carregando…</div>`;
-  const [header, entries] = await Promise.all([fetchHeader(id), fetchEntries(id)]);
-  state.currentHeader = header;
-  state.currentEntries = entries;
-  renderReportBody();
-}
-
-function renderReport(){
-  app.innerHTML = `
-    <header class="topbar">
-      <button class="back" id="btn-back">←</button>
-      <div>
-        <h1 id="hdr-title">Relatório</h1>
-        <div class="sub" id="hdr-sub"></div>
-      </div>
-    </header>
-    <main id="main"></main>
-    <div class="fab-bar"><div class="fab-bar-inner" style="flex-wrap:wrap;">
-      <button class="btn btn-ghost btn-sm" id="btn-pdf" style="flex:1;">👁 Pré-visualizar PDF</button>
-      <button class="btn btn-orange" id="btn-add" style="flex:1.4;">＋ Adicionar fotos</button>
-      <button class="btn btn-ghost" id="btn-add-textpage" style="flex:1 1 100%;margin-top:6px;">📝 Adicionar página de texto</button>
-    </div></div>
-  `;
-  document.getElementById('btn-back').onclick = ()=>{ state.screen='home'; render(); };
-  document.getElementById('btn-add').onclick = ()=>{ state.screen='add'; state.pendingPhotos=[]; render(); };
-  document.getElementById('btn-add-textpage').onclick = ()=>{ state.editingTextPage = null; state.screen='add-textpage'; render(); };
-  document.getElementById('btn-pdf').onclick = async (e)=>{
-    const btn = e.currentTarget;
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner"></span>'; btn.disabled = true;
-    try{ await showPdfPreview(state.currentReportId); }
-    catch(err){ console.error(err); showToast('Erro ao gerar PDF.'); }
-    btn.innerHTML = orig; btn.disabled = false;
-  };
-}
-
-function renderAddTextPage(){
-  const editing = state.editingTextPage; // null = novo, ou {key, pageTitle, pageBody}
-  app.innerHTML = `
-    <header class="topbar">
-      <button class="back" id="btn-back">←</button>
-      <div>
-        <h1>${editing ? 'Editar página de texto' : 'Nova página de texto'}</h1>
-        <div class="sub">${escapeHtml(state.currentHeader.embarcacao)} — ${escapeHtml(state.currentHeader.turma)}</div>
-      </div>
-    </header>
-    <main>
-      <div class="card">
-        <label>Título da página</label>
-        <input type="text" id="f-page-title" placeholder="Ex: Observações Gerais da Semana" value="${escapeHtml(editing ? editing.pageTitle : '')}">
-        <label>Texto</label>
-        <textarea id="f-page-body" placeholder="Escreva o que quiser aqui..." style="width:100%;box-sizing:border-box;min-height:160px;padding:9px 11px;font-size:14px;">${escapeHtml(editing ? editing.pageBody : '')}</textarea>
-        <div class="btn-row">
-          <button class="btn btn-primary" id="btn-save-textpage">${editing ? 'Salvar alterações' : 'Adicionar página'}</button>
-        </div>
-        ${editing ? `<div class="btn-row"><button class="btn btn-danger-ghost" id="btn-delete-textpage">Excluir esta página</button></div>` : ''}
-      </div>
-    </main>
-  `;
-  document.getElementById('btn-back').onclick = ()=>{ state.editingTextPage=null; state.screen='report'; render(); renderReportBody(); };
-
-  document.getElementById('btn-save-textpage').onclick = async ()=>{
-    const title = document.getElementById('f-page-title').value.trim();
-    const body = document.getElementById('f-page-body').value.trim();
-    if(!title){ showToast('Dê um título para a página.'); return; }
-    const btn = document.getElementById('btn-save-textpage');
-    btn.innerHTML = '<span class="spinner"></span> Salvando…'; btn.disabled = true;
-    try{
-      if(editing){
-        await updateEntry(state.currentReportId, editing.key, {pageTitle: title, pageBody: body});
-      } else {
-        await addTextPage(state.currentReportId, title, body);
-      }
-      state.currentEntries = await fetchEntries(state.currentReportId);
-      showToast(editing ? 'Página atualizada!' : 'Página adicionada!');
-      state.editingTextPage = null;
-      state.screen = 'report';
-      render();
-      renderReportBody();
-    }catch(e){
-      console.error(e); showToast('Erro ao salvar.');
-      btn.innerHTML = editing ? 'Salvar alterações' : 'Adicionar página'; btn.disabled = false;
-    }
-  };
-
-  if(editing){
-    document.getElementById('btn-delete-textpage').onclick = async ()=>{
-      if(!confirm('Excluir esta página de texto?')) return;
-      const btn = document.getElementById('btn-delete-textpage');
-      btn.disabled = true;
-      try{
-        await deleteEntry(editing.key);
-        state.currentEntries = await fetchEntries(state.currentReportId);
-        showToast('Página excluída.');
-        state.editingTextPage = null;
-        state.screen = 'report';
-        render();
-        renderReportBody();
-      }catch(e){
-        console.error(e); showToast('Erro ao excluir.'); btn.disabled = false;
-      }
-    };
-  }
-}
-
-function renderReportBody(){
-  const header = state.currentHeader;
-  document.getElementById('hdr-title').textContent = header ? `${header.embarcacao} — ${header.turma}` : 'Relatório';
-  document.getElementById('hdr-sub').textContent = header ? header.periodo : '';
-
-  const main = document.getElementById('main');
-  const entries = state.currentEntries;
-
-  let headerCard = `
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h2 style="margin:0;">Dados do relatório</h2>
-        <button class="btn btn-ghost btn-sm" id="btn-edit-header">✎ Editar</button>
-      </div>
-      <div class="header-summary" style="margin-top:10px;">
-        <b>Embarcação:</b> ${escapeHtml(header.embarcacao)}<br>
-        <b>Turma:</b> ${escapeHtml(header.turma)}<br>
-        <b>CMT || CFM:</b> ${escapeHtml(header.cmtcfm||'-')}<br>
-        <b>Setor:</b> ${escapeHtml(header.setor||'-')}<br>
-        <b>Período:</b> ${escapeHtml(header.periodo)}<br>
-        <b>Colaboradores:</b> ${escapeHtml(header.colaboradores||'-')}
-      </div>
-    </div>
-  `;
-
-  if(entries.length === 0){
-    main.innerHTML = headerCard + `<div class="empty"><div class="big">📷</div>Nenhuma foto adicionada ainda.<br>Toque em "Adicionar foto" abaixo.</div>`;
-    document.getElementById('btn-edit-header').onclick = ()=>{ state.screen='edit-header'; render(); };
-    return;
-  }
-
-  const order = {Antes:0, Durante:1, Depois:2};
-  let taskOrder = []; const byTask = {};
-  entries.forEach(e=>{ if(!byTask[e.task]){byTask[e.task]=[];taskOrder.push(e.task);} byTask[e.task].push(e); });
-  taskOrder.forEach(t=> byTask[t].sort((a,b)=> (a.ts-b.ts)));
-  taskOrder = applyTaskOrder(taskOrder, header.taskOrder);
-
-  let groupsHtml = taskOrder.map((task, idx)=>{
-    const taskEntries = byTask[task];
-
-    // Text-page items render as a simple standalone row, not a photo task group.
-    if(taskEntries.length === 1 && taskEntries[0].isTextPage){
-      const tp = taskEntries[0];
-      const preview = (tp.pageBody||'').slice(0, 90);
-      return `<div class="task-group" data-task="${encodeURIComponent(task)}">
-        <div class="textpage-row" style="display:flex;align-items:center;gap:8px;background:#eaf1fb;border:1px solid #a9c3e6;border-radius:8px;padding:10px;">
-          <button class="drag-handle">☰</button>
-          <span style="font-size:15px;flex:none;">📝</span>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:700;font-size:13.5px;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(tp.pageTitle||'(sem título)')}</div>
-            <div style="font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(preview)}${(tp.pageBody||'').length>90?'…':''}</div>
-          </div>
-          <button class="btn-sm btn-ghost edit-textpage" data-key="${tp.key}" style="padding:5px 9px;flex:none;">✎</button>
-        </div>
-      </div>`;
-    }
-
-    const rowsParts = taskEntries.map((entry, eIdx)=>{
-      const isGroupStart = eIdx === 0 || !!entry.pageBreakBefore;
-      const pageMode = entry.pageMode === 'text' ? 'text' : 'tags';
-      let header = '';
-      if(isGroupStart){
-        header = `
-        <div style="background:var(--bg);border-radius:8px;padding:8px;margin:6px 0 4px;">
-          <div class="page-mode-choice" data-key="${entry.key}" style="display:flex;gap:6px;margin-bottom:${pageMode==='text'?'6px':'0'};">
-            <button type="button" class="page-mode-btn${pageMode==='tags'?' active':''}" data-key="${entry.key}" data-mode="tags" style="flex:1;padding:5px 4px;border-radius:7px;border:1.5px solid ${pageMode==='tags'?'var(--blue)':'var(--border)'};background:${pageMode==='tags'?'#D6EAF8':'#fff'};color:${pageMode==='tags'?'#1B5C8A':'var(--muted)'};font-size:11px;cursor:pointer;">Etiquetas por foto</button>
-            <button type="button" class="page-mode-btn${pageMode==='text'?' active':''}" data-key="${entry.key}" data-mode="text" style="flex:1;padding:5px 4px;border-radius:7px;border:1.5px solid ${pageMode==='text'?'#8e44ad':'var(--border)'};background:${pageMode==='text'?'#E8DAEF':'#fff'};color:${pageMode==='text'?'#6C3483':'var(--muted)'};font-size:11px;cursor:pointer;">Campo único</button>
-          </div>
-          ${pageMode==='text' ? `<textarea class="page-text-input" data-key="${entry.key}" placeholder="Texto desta página (ex: medidas, observações)..." style="width:100%;box-sizing:border-box;min-height:44px;font-size:12.5px;padding:7px 9px;">${escapeHtml(entry.pageText||'')}</textarea>` : ''}
-        </div>`;
-      }
-      const row = `
-      ${header}
-      <div class="entry-row" data-key="${entry.key}">
-        <button class="drag-handle">☰</button>
-        <img src="${entry.photo}">
-        <div class="er-info">
-          <span class="phase-tag phase-${entry.phase}">${phaseLabel(entry)}</span>
-          <div class="er-meta">${entry.author ? escapeHtml(entry.author) : 'Sem nome'} · ${new Date(entry.ts).toLocaleDateString('pt-BR')}</div>
-        </div>
-        <button class="er-edit" data-key="${entry.key}" style="background:none;border:none;color:var(--navy);font-size:16px;padding:6px;cursor:pointer;flex:none;">✎</button>
-        <button class="er-del" data-key="${entry.key}">✕</button>
-      </div>`;
-      if(eIdx === taskEntries.length - 1) return row;
-      const nextEntry = taskEntries[eIdx+1];
-      const isBreak = !!nextEntry.pageBreakBefore;
-      const divider = `
-      <button class="page-break-toggle" data-key="${nextEntry.key}" style="
-        display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;cursor:pointer;padding:2px 0;margin:2px 0;
-      ">
-        <span style="flex:1;border-top:${isBreak?'2px dashed var(--orange)':'1px dashed var(--border)'};"></span>
-        <span style="font-size:10.5px;font-weight:700;color:${isBreak?'var(--orange)':'var(--muted)'};white-space:nowrap;">${isBreak?'✂ nova página aqui':'mesma página'}</span>
-        <span style="flex:1;border-top:${isBreak?'2px dashed var(--orange)':'1px dashed var(--border)'};"></span>
-      </button>`;
-      return row + divider;
-    });
-    const rows = rowsParts.join('');
-    const isOpen = state.expandedTasks.has(task);
-    return `<div class="task-group" data-task="${encodeURIComponent(task)}">
-      <div class="task-group-title task-toggle" data-task="${encodeURIComponent(task)}" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-        <span style="display:flex;align-items:center;gap:6px;min-width:0;">
-          <button class="drag-handle">☰</button>
-          <span class="task-chevron" style="flex:none;">${isOpen ? '▾' : '▸'}</span>
-          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(task)}</span>
-          <span style="flex:none;background:var(--border);color:var(--muted);font-size:11px;font-weight:700;border-radius:20px;padding:2px 8px;">${byTask[task].length}</span>
-        </span>
-        <span style="flex:none;">
-          <button class="btn-sm btn-ghost rename-task" data-task="${encodeURIComponent(task)}" style="padding:4px 9px;margin-left:4px;">✎</button>
-          <button class="btn-sm btn-ghost move-task-report" data-task="${encodeURIComponent(task)}" style="padding:4px 9px;margin-left:4px;">⇢ relatório</button>
-        </span>
-      </div>
-      <div class="task-group-rows" data-task-rows="${encodeURIComponent(task)}" style="display:${isOpen?'block':'none'};margin-top:8px;">
-        ${rows}
-      </div>
-    </div>`;
-  }).join('');
-
-
-  const photoCount = entries.filter(e=>!e.isTextPage).length;
-  main.innerHTML = headerCard + `<div class="card"><h2>Fotos (${photoCount})</h2><div id="task-groups-container">${groupsHtml}</div></div>`;
-
-  document.getElementById('btn-edit-header').onclick = ()=>{ state.screen='edit-header'; render(); };
-
-  main.querySelectorAll('.er-del').forEach(btn=>{
-    btn.onclick = async ()=>{
-      if(!confirm('Remover esta foto do relatório?')) return;
-      await deleteEntry(btn.getAttribute('data-key'));
-      state.currentEntries = await fetchEntries(state.currentReportId);
-      renderReportBody();
-    };
-  });
-
-  main.querySelectorAll('.er-edit').forEach(btn=>{
-    btn.onclick = ()=>{
-      const key = btn.getAttribute('data-key');
-      const entry = state.currentEntries.find(e=>e.key===key);
-      if(!entry) return;
-      state.editingEntry = entry;
-      state.screen = 'edit-entry';
-      render();
-    };
-  });
-
-  main.querySelectorAll('.move-task-report').forEach(btn=>{
-    btn.onclick = ()=>{
-      const task = decodeURIComponent(btn.getAttribute('data-task'));
-      state.movingTask = task;
-      state.screen = 'move-task-report';
-      render();
-    };
-  });
-
-  main.querySelectorAll('.rename-task').forEach(btn=>{
-    btn.onclick = async ()=>{
-      const task = decodeURIComponent(btn.getAttribute('data-task'));
-      await renameTask(task);
-    };
-  });
-
-  main.querySelectorAll('.edit-textpage').forEach(btn=>{
-    btn.onclick = ()=>{
-      const key = btn.getAttribute('data-key');
-      const entry = state.currentEntries.find(e=>e.key===key);
-      if(!entry) return;
-      state.editingTextPage = entry;
-      state.screen = 'add-textpage';
-      render();
-    };
-  });
-
-  main.querySelectorAll('.page-break-toggle').forEach(btn=>{
-    btn.onclick = async ()=>{
-      const key = btn.getAttribute('data-key');
-      await toggleEntryPageBreak(key);
-    };
-  });
-
-  main.querySelectorAll('.page-mode-btn').forEach(btn=>{
-    btn.onclick = async ()=>{
-      const key = btn.getAttribute('data-key');
-      const mode = btn.getAttribute('data-mode');
-      const entry = state.currentEntries.find(e=>e.key===key);
-      if(entry) entry.pageMode = mode;
-      await updateEntry(state.currentReportId, key, {pageMode: mode});
-      renderReportBody();
-    };
-  });
-
-  main.querySelectorAll('.page-text-input').forEach(ta=>{
-    let debounceTimer = null;
-    ta.oninput = ()=>{
-      const key = ta.getAttribute('data-key');
-      const entry = state.currentEntries.find(e=>e.key===key);
-      if(entry) entry.pageText = ta.value;
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(()=>{
-        updateEntry(state.currentReportId, key, {pageText: ta.value}).catch(e=>console.error(e));
-      }, 500);
-    };
-  });
-
-  main.querySelectorAll('.task-toggle').forEach(titleEl=>{
-    titleEl.onclick = (ev)=>{
-      if(ev.target.closest('button')) return;
-      const task = decodeURIComponent(titleEl.getAttribute('data-task'));
-      const rowsEl = main.querySelector(`.task-group-rows[data-task-rows="${titleEl.getAttribute('data-task')}"]`);
-      const chevron = titleEl.querySelector('.task-chevron');
-      if(state.expandedTasks.has(task)){
-        state.expandedTasks.delete(task);
-        if(rowsEl) rowsEl.style.display = 'none';
-        if(chevron) chevron.textContent = '▸';
-      } else {
-        state.expandedTasks.add(task);
-        if(rowsEl) rowsEl.style.display = 'block';
-        if(chevron) chevron.textContent = '▾';
-      }
-    };
-  });
-
-  // Drag-and-drop reordering of tasks (whole groups)
-  const taskContainer = document.getElementById('task-groups-container');
-  if(taskContainer){
-    enableDragReorder(taskContainer, '.task-group', '.task-group-title .drag-handle, .textpage-row .drag-handle', (orderedEls)=>{
-      const newTaskOrder = orderedEls.map(el=> decodeURIComponent(el.getAttribute('data-task')));
-      updateReportHeader(state.currentReportId, {taskOrder: newTaskOrder})
-        .then(()=> fetchHeader(state.currentReportId))
-        .then(h=>{ state.currentHeader = h; })
-        .catch(e=> console.error('Erro ao salvar ordem das tarefas', e));
-    });
-  }
-
-  // Drag-and-drop reordering of photos within each task
-  main.querySelectorAll('.task-group-rows').forEach(rowsEl=>{
-    enableDragReorder(rowsEl, '.entry-row', '.drag-handle', (orderedEls)=>{
-      const baseTs = Date.now();
-      const keys = orderedEls.map(el=> el.getAttribute('data-key'));
-      Promise.all(keys.map((key, i)=> updateEntry(state.currentReportId, key, {ts: baseTs + i})))
-        .then(()=>{
-          keys.forEach((key, i)=>{
-            const entry = state.currentEntries.find(e=>e.key===key);
-            if(entry) entry.ts = baseTs + i;
-          });
-        })
-        .catch(e=> console.error('Erro ao salvar ordem das fotos', e));
-    });
-  });
-}
-
-function renderAdd(){
-  const existingTasks = [...new Set(state.currentEntries.map(e=>e.task))];
-  app.innerHTML = `
-    <header class="topbar">
-      <button class="back" id="btn-back">←</button>
-      <div>
-        <h1>Adicionar fotos</h1>
-        <div class="sub">${escapeHtml(state.currentHeader.embarcacao)} — ${escapeHtml(state.currentHeader.turma)}</div>
-      </div>
-    </header>
-    <main>
-      <div class="card">
-        <label>Tarefa</label>
-        <input type="text" id="f-task" list="task-suggestions" placeholder="Ex: Limpeza do purificador de óleo diesel">
-        <datalist id="task-suggestions">
-          ${existingTasks.map(t=>`<option value="${escapeHtml(t)}">`).join('')}
-        </datalist>
-        <div class="hint">Todas as fotos abaixo serão salvas nesta mesma tarefa.</div>
-
-        <label style="margin-top:16px;">Fotos</label>
-        <div id="photo-list"></div>
-        <button class="btn btn-ghost" id="btn-photo">📷 Tirar / escolher fotos (pode selecionar várias)</button>
-
-        <label>Seu nome (opcional)</label>
-        <input type="text" id="f-author" placeholder="Ex: João Silva" value="${escapeHtml(state.authorName)}">
-
-        <div class="btn-row">
-          <button class="btn btn-primary" id="btn-save">Salvar fotos</button>
-        </div>
-      </div>
-    </main>
-  `;
-  document.getElementById('btn-back').onclick = ()=>{ state.screen='report'; render(); renderReportBody(); };
-
-  const photoList = document.getElementById('photo-list');
-  function renderPhotoList(){
-    if(state.pendingPhotos.length === 0){
-      photoList.innerHTML = '';
-      return;
-    }
-    photoList.innerHTML = state.pendingPhotos.map((p, i)=>`
-      <div style="display:flex;gap:10px;align-items:center;background:#fff;border:1.5px solid var(--border);border-radius:9px;padding:8px;margin-bottom:8px;">
-        <img src="${p.dataUrl}" style="width:56px;height:56px;object-fit:cover;border-radius:6px;flex:none;">
-        <div style="flex:1;min-width:0;">
-          <div class="phase-choice">
-            <button type="button" class="phase-btn${p.phase==='Antes'?' active-Antes':''}" data-idx="${i}" data-phase="Antes">Antes</button>
-            <button type="button" class="phase-btn${p.phase==='Durante'?' active-Durante':''}" data-idx="${i}" data-phase="Durante">Durante</button>
-            <button type="button" class="phase-btn${p.phase==='Depois'?' active-Depois':''}" data-idx="${i}" data-phase="Depois">Depois</button>
-            <button type="button" class="phase-btn${p.phase==='Outro'?' active-Outro':''}" data-idx="${i}" data-phase="Outro">Outro</button>
-          </div>
-          ${p.phase==='Outro' ? `<input type="text" class="phase-outro-text" data-idx="${i}" placeholder="Escreva a etiqueta..." value="${escapeHtml(p.phaseText||'')}" style="margin-top:6px;padding:8px 10px;font-size:13px;">` : ''}
-        </div>
-        <button class="photo-remove" data-idx="${i}" style="background:none;border:none;color:var(--danger);font-size:18px;padding:6px;cursor:pointer;flex:none;">✕</button>
-      </div>
-    `).join('');
-
-    photoList.querySelectorAll('.phase-btn').forEach(btn=>{
-      btn.onclick = ()=>{
-        const idx = Number(btn.getAttribute('data-idx'));
-        state.pendingPhotos[idx].phase = btn.getAttribute('data-phase');
-        renderPhotoList();
-      };
-    });
-    photoList.querySelectorAll('.phase-outro-text').forEach(inp=>{
-      inp.oninput = ()=>{
-        const idx = Number(inp.getAttribute('data-idx'));
-        state.pendingPhotos[idx].phaseText = inp.value;
-      };
-    });
-    photoList.querySelectorAll('.photo-remove').forEach(btn=>{
-      btn.onclick = ()=>{
-        const idx = Number(btn.getAttribute('data-idx'));
-        state.pendingPhotos.splice(idx, 1);
-        renderPhotoList();
-      };
-    });
-  }
-  renderPhotoList();
-
-  document.getElementById('btn-photo').onclick = ()=>{
-    const input = document.getElementById('camera-input');
-    input.value = '';
-    input.onchange = async ()=>{
-      if(input.files && input.files.length){
-        showToast(input.files.length > 1 ? 'Processando fotos…' : 'Processando foto…');
-        for(const file of input.files){
-          try{
-            const compressed = await compressImage(file);
-            state.pendingPhotos.push({...compressed, phase: null, phaseText: ''});
-          }catch(e){ console.error(e); showToast('Não foi possível ler uma das fotos.'); }
-        }
-        renderPhotoList();
-      }
-    };
-    input.click();
-  };
-
-  document.getElementById('btn-save').onclick = async ()=>{
-    const task = document.getElementById('f-task').value.trim();
-    const author = document.getElementById('f-author').value.trim();
-    if(state.pendingPhotos.length === 0){ showToast('Adicione ao menos uma foto.'); return; }
-    if(!task){ showToast('Informe a tarefa.'); return; }
-    const missingPhase = state.pendingPhotos.some(p=>!p.phase);
-    if(missingPhase){ showToast('Selecione a fase de cada foto.'); return; }
-    const missingOutroText = state.pendingPhotos.some(p=>p.phase==='Outro' && !(p.phaseText||'').trim());
-    if(missingOutroText){ showToast('Escreva a etiqueta das fotos marcadas como "Outro".'); return; }
-    const btn = document.getElementById('btn-save');
-    btn.innerHTML = '<span class="spinner"></span> Salvando…'; btn.disabled = true;
-    try{
-      if(author) await saveAuthorName(author);
-      const baseTs = Date.now();
-      await Promise.all(state.pendingPhotos.map((p, i)=> addEntry(state.currentReportId, {
-        task, phase: p.phase, phaseText: p.phase==='Outro' ? p.phaseText.trim() : '', author,
-        photo: p.dataUrl, w: p.w, h: p.h,
-        ts: baseTs + i
-      })));
-      state.currentEntries = await fetchEntries(state.currentReportId);
-      showToast(state.pendingPhotos.length > 1 ? 'Fotos adicionadas!' : 'Foto adicionada!');
-      state.pendingPhotos = [];
-      state.screen = 'report';
-      render();
-      renderReportBody();
-    }catch(e){
-      console.error(e); showToast('Erro ao salvar. Tente novamente.');
-      btn.innerHTML = 'Salvar fotos'; btn.disabled = false;
-    }
-  };
-}
-
-function renderEditEntry(){
-  const entry = state.editingEntry;
-  const existingTasks = [...new Set(state.currentEntries.map(e=>e.task))];
-  app.innerHTML = `
-    <header class="topbar">
-      <button class="back" id="btn-back">←</button>
-      <div>
-        <h1>Editar foto</h1>
-        <div class="sub">Mover para outra tarefa, fase ou relatório</div>
-      </div>
-    </header>
-    <main>
-      <div class="card">
-        <label>Foto</label>
-        <img class="photo-preview" src="${entry.photo}">
-
-        <label>Tarefa</label>
-        <input type="text" id="f-task" list="task-suggestions" value="${escapeHtml(entry.task)}">
-        <datalist id="task-suggestions">
-          ${existingTasks.map(t=>`<option value="${escapeHtml(t)}">`).join('')}
-        </datalist>
-        <div class="hint">Digite o nome exato de uma tarefa já existente pra mover esta foto pra ela.</div>
-
-        <label>Fase da atividade</label>
-        <div class="phase-choice" id="phase-choice">
-          <button type="button" class="phase-btn${entry.phase==='Antes'?' active-Antes':''}" data-phase="Antes">Antes</button>
-          <button type="button" class="phase-btn${entry.phase==='Durante'?' active-Durante':''}" data-phase="Durante">Durante</button>
-          <button type="button" class="phase-btn${entry.phase==='Depois'?' active-Depois':''}" data-phase="Depois">Depois</button>
-          <button type="button" class="phase-btn${entry.phase==='Outro'?' active-Outro':''}" data-phase="Outro">Outro</button>
-        </div>
-        <div id="outro-text-area" style="${entry.phase==='Outro'?'':'display:none;'}margin-top:8px;">
-          <input type="text" id="f-phase-text" placeholder="Escreva a etiqueta..." value="${escapeHtml(entry.phaseText||'')}">
-        </div>
-
-        <div class="btn-row">
-          <button class="btn btn-primary" id="btn-save-edit">Salvar alterações</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Mover para outro relatório</h2>
-        <div id="move-report-area"><div class="hint">Carregando relatórios…</div></div>
-      </div>
-    </main>
-  `;
-  document.getElementById('btn-back').onclick = ()=>{ state.screen='report'; render(); renderReportBody(); };
-
-  let selectedPhase = entry.phase;
-  const outroArea = document.getElementById('outro-text-area');
-  document.querySelectorAll('.phase-btn').forEach(btn=>{
-    btn.onclick = ()=>{
-      selectedPhase = btn.getAttribute('data-phase');
-      document.querySelectorAll('.phase-btn').forEach(b=>b.className='phase-btn');
-      btn.className = `phase-btn active-${selectedPhase}`;
-      outroArea.style.display = selectedPhase === 'Outro' ? 'block' : 'none';
-    };
-  });
-
-  document.getElementById('btn-save-edit').onclick = async ()=>{
-    const task = document.getElementById('f-task').value.trim();
-    if(!task){ showToast('Informe a tarefa.'); return; }
-    if(!selectedPhase){ showToast('Selecione a fase da atividade.'); return; }
-    const phaseText = document.getElementById('f-phase-text').value.trim();
-    if(selectedPhase === 'Outro' && !phaseText){ showToast('Escreva a etiqueta da fase.'); return; }
-    const btn = document.getElementById('btn-save-edit');
-    btn.innerHTML = '<span class="spinner"></span> Salvando…'; btn.disabled = true;
-    try{
-      await updateEntry(state.currentReportId, entry.key, {task, phase: selectedPhase, phaseText: selectedPhase==='Outro' ? phaseText : ''});
-      state.currentEntries = await fetchEntries(state.currentReportId);
-      showToast('Foto atualizada!');
-      state.editingEntry = null;
-      state.screen = 'report';
-      render();
-      renderReportBody();
-    }catch(e){
-      console.error(e); showToast('Erro ao salvar. Tente novamente.');
-      btn.innerHTML = 'Salvar alterações'; btn.disabled = false;
-    }
-  };
-
-  // Load other reports for the "move to another report" section
-  const moveArea = document.getElementById('move-report-area');
-  fetchReports().then(reports=>{
-    const others = reports.filter(r=>r.id !== state.currentReportId);
-    if(others.length === 0){
-      moveArea.innerHTML = '<div class="hint">Não há outros relatórios criados ainda.</div>';
-      return;
-    }
-    moveArea.innerHTML = `
-      <label>Relatório de destino</label>
-      <select id="f-target-report">
-        ${others.map(r=>`<option value="${r.id}">${escapeHtml(r.header.embarcacao)} — ${escapeHtml(r.header.turma)} (${escapeHtml(r.header.periodo||'')})</option>`).join('')}
-      </select>
-      <label>Tarefa no relatório de destino</label>
-      <input type="text" id="f-target-task" value="${escapeHtml(entry.task)}">
-      <div class="hint">Se já existir uma tarefa com esse nome no outro relatório, a foto entra no mesmo grupo.</div>
-      <label>Ação</label>
-      <div class="phase-choice" id="action-choice">
-        <button type="button" class="phase-btn active-Durante" data-action="move">Mover</button>
-        <button type="button" class="phase-btn" data-action="copy">Copiar</button>
-      </div>
-      <div class="hint">"Mover" tira a foto daqui. "Copiar" mantém aqui e também coloca no outro relatório.</div>
-      <div class="btn-row">
-        <button class="btn btn-danger-ghost" id="btn-move-report">Mover foto para este relatório</button>
-      </div>
-    `;
-    let action = 'move';
-    document.querySelectorAll('#action-choice .phase-btn').forEach(btn=>{
-      btn.onclick = ()=>{
-        action = btn.getAttribute('data-action');
-        document.querySelectorAll('#action-choice .phase-btn').forEach(b=>b.className='phase-btn');
-        btn.className = 'phase-btn active-Durante';
-        document.getElementById('btn-move-report').textContent = action === 'copy' ? 'Copiar foto para este relatório' : 'Mover foto para este relatório';
-      };
-    });
-    document.getElementById('btn-move-report').onclick = async ()=>{
-      const targetId = document.getElementById('f-target-report').value;
-      const targetTask = document.getElementById('f-target-task').value.trim();
-      if(!targetTask){ showToast('Informe a tarefa no relatório de destino.'); return; }
-      const verb = action === 'copy' ? 'Copiar' : 'Mover';
-      const warning = action === 'copy' ? '' : ' Ela sairá deste relatório.';
-      if(!confirm(`${verb} esta foto para o outro relatório?${warning}`)) return;
-      const btn = document.getElementById('btn-move-report');
-      const originalLabel = action === 'copy' ? 'Copiar foto para este relatório' : 'Mover foto para este relatório';
-      btn.innerHTML = `<span class="spinner"></span> ${action === 'copy' ? 'Copiando' : 'Movendo'}…`; btn.disabled = true;
-      try{
-        await moveEntryToReport(state.currentReportId, targetId, entry, targetTask, action === 'copy');
-        state.currentEntries = await fetchEntries(state.currentReportId);
-        showToast(action === 'copy' ? 'Foto copiada para o outro relatório!' : 'Foto movida para o outro relatório!');
-        state.editingEntry = null;
-        state.screen = 'report';
-        render();
-        renderReportBody();
-      }catch(e){
-        console.error(e); showToast(`Erro ao ${action === 'copy' ? 'copiar' : 'mover'} a foto.`);
-        btn.innerHTML = originalLabel; btn.disabled = false;
-      }
-    };
-  });
-}
-
-function renderMoveTaskReport(){
-  const task = state.movingTask;
-  const taskEntries = state.currentEntries.filter(e=>e.task===task);
-  app.innerHTML = `
-    <header class="topbar">
-      <button class="back" id="btn-back">←</button>
-      <div>
-        <h1>Mover tarefa</h1>
-        <div class="sub">${escapeHtml(task)}</div>
-      </div>
-    </header>
-    <main>
-      <div class="card">
-        <h2>${taskEntries.length} foto${taskEntries.length!==1?'s':''} nesta tarefa</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
-          ${taskEntries.map(e=>`<img src="${e.photo}" style="width:52px;height:52px;object-fit:cover;border-radius:6px;">`).join('')}
-        </div>
-      </div>
-      <div class="card">
-        <h2>Mover para outro relatório</h2>
-        <div id="move-report-area"><div class="hint">Carregando relatórios…</div></div>
-      </div>
-    </main>
-  `;
-  document.getElementById('btn-back').onclick = ()=>{ state.movingTask=null; state.screen='report'; render(); renderReportBody(); };
-
-  const moveArea = document.getElementById('move-report-area');
-  fetchReports().then(reports=>{
-    const others = reports.filter(r=>r.id !== state.currentReportId);
-    if(others.length === 0){
-      moveArea.innerHTML = '<div class="hint">Não há outros relatórios criados ainda.</div>';
-      return;
-    }
-    moveArea.innerHTML = `
-      <label>Relatório de destino</label>
-      <select id="f-target-report">
-        ${others.map(r=>`<option value="${r.id}">${escapeHtml(r.header.embarcacao)} — ${escapeHtml(r.header.turma)} (${escapeHtml(r.header.periodo||'')})</option>`).join('')}
-      </select>
-      <label>Tarefa no relatório de destino</label>
-      <input type="text" id="f-target-task" value="${escapeHtml(task)}">
-      <div class="hint">Se já existir uma tarefa com esse nome no outro relatório, as fotos entram no mesmo grupo.</div>
-      <label>Ação</label>
-      <div class="phase-choice" id="action-choice">
-        <button type="button" class="phase-btn active-Durante" data-action="move">Mover</button>
-        <button type="button" class="phase-btn" data-action="copy">Copiar</button>
-      </div>
-      <div class="hint">"Mover" tira as fotos daqui. "Copiar" mantém aqui e também coloca no outro relatório.</div>
-      <div class="btn-row">
-        <button class="btn btn-danger-ghost" id="btn-move-report">Mover ${taskEntries.length} foto${taskEntries.length!==1?'s':''} para este relatório</button>
-      </div>
-    `;
-    let action = 'move';
-    document.querySelectorAll('#action-choice .phase-btn').forEach(btn=>{
-      btn.onclick = ()=>{
-        action = btn.getAttribute('data-action');
-        document.querySelectorAll('#action-choice .phase-btn').forEach(b=>b.className='phase-btn');
-        btn.className = 'phase-btn active-Durante';
-        const verbLabel = action === 'copy' ? 'Copiar' : 'Mover';
-        document.getElementById('btn-move-report').textContent = `${verbLabel} ${taskEntries.length} foto${taskEntries.length!==1?'s':''} para este relatório`;
-      };
-    });
-    document.getElementById('btn-move-report').onclick = async ()=>{
-      const targetId = document.getElementById('f-target-report').value;
-      const targetTask = document.getElementById('f-target-task').value.trim();
-      if(!targetTask){ showToast('Informe a tarefa no relatório de destino.'); return; }
-      const verb = action === 'copy' ? 'Copiar' : 'Mover';
-      const warning = action === 'copy' ? '' : ' Elas sairão deste relatório.';
-      if(!confirm(`${verb} todas as ${taskEntries.length} fotos desta tarefa para o outro relatório?${warning}`)) return;
-      const btn = document.getElementById('btn-move-report');
-      const originalLabel = `${verb} ${taskEntries.length} foto${taskEntries.length!==1?'s':''} para este relatório`;
-      btn.innerHTML = `<span class="spinner"></span> ${action === 'copy' ? 'Copiando' : 'Movendo'}…`; btn.disabled = true;
-      try{
-        await moveTaskToReport(state.currentReportId, targetId, taskEntries, targetTask, action === 'copy');
-        state.currentEntries = await fetchEntries(state.currentReportId);
-        showToast(action === 'copy' ? 'Tarefa copiada para o outro relatório!' : 'Tarefa movida para o outro relatório!');
-        state.movingTask = null;
-        state.screen = 'report';
-        render();
-        renderReportBody();
-      }catch(e){
-        console.error(e); showToast(`Erro ao ${action === 'copy' ? 'copiar' : 'mover'} a tarefa.`);
-        btn.innerHTML = originalLabel; btn.disabled = false;
-      }
-    };
-  });
-}
-
-function escapeHtml(s){
-  return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-// ---------- Connectivity banner ----------
-function updateOnlineStatus(){
-  const el = document.getElementById('offline-banner');
-  if(!el) return;
-  el.classList.toggle('show', !navigator.onLine);
-}
-window.addEventListener('online', updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
-updateOnlineStatus();
-
-// ---------- Init ----------
-async function init(){
-  const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
-  if(isAdmin){
-    const adminAuthed = localStorage.getItem('adminAuthed') === '1';
-    state.screen = adminAuthed ? 'admin-access' : 'admin-login';
-    await loadAuthorName();
-    render();
-    return;
-  }
-
-  const wasApproved = localStorage.getItem('accessApproved') === '1';
-  const reqId = localStorage.getItem('accessRequestId');
-
-  if(reqId){
-    try{
-      const reqDoc = await getAccessRequest(reqId);
-      if(reqDoc && reqDoc.status === 'approved'){
-        localStorage.setItem('accessApproved', '1');
-        await loadAuthorName();
-        render();
-        return;
-      }
-      if(reqDoc && reqDoc.status === 'denied'){
-        localStorage.removeItem('accessApproved');
-        state.screen = 'access-denied';
-        render();
-        return;
-      }
-      // status is pending (or the request no longer exists)
-      localStorage.removeItem('accessApproved');
-      state.screen = 'access-pending';
-      render();
-      return;
-    }catch(e){
-      console.error('Erro ao verificar acesso (provavelmente offline)', e);
-      // Offline: fall back to the last known status instead of locking the person out.
-      if(wasApproved){
-        await loadAuthorName();
-        render();
-        return;
-      }
-      state.screen = 'access-pending';
-      render();
-      return;
-    }
-  }
-
-  state.screen = 'access-request';
-  render();
-}
-init();
-
+});
 </script>
 </body>
 </html>
