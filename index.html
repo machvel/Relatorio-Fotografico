@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#3f5a8c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <title>Relatórios fotográficos</title>
 <style>
 :root{--blue:#3f5a8c;--blue2:#4472c4;--orange:#ff6a00;--navy:#1f2f4f;--bg:#f3f6fb;--line:#d5dce8;--txt:#1f2f4f;--mut:#5b6577;--ok-bg:#eaf3de;--ok:#27500a;--warn-bg:#faeeda;--warn:#633806;--acc-bg:#e6f1fb;--acc:#0c447c;--err:#a32d2d}
@@ -14,6 +17,7 @@ button:hover{border-color:var(--blue)}
 button.pri{background:var(--blue);border-color:var(--blue);color:#fff}
 button.pri:hover{background:var(--navy)}
 button.dng{color:var(--err)}
+button:disabled{opacity:.6;cursor:wait}
 input,select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fff}
 textarea{min-height:90px;resize:vertical}
 label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
@@ -60,15 +64,65 @@ label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
   <main id="main"></main>
 </div>
 <input id="file" type="file" accept="image/*" capture="environment" hidden>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-var S={reports:[]},sel=null,pg=0,mode="view",pending=null,msg="",err="";
+var S={reports:[]},sel=null,pg=0,mode="view",pending=null,msg="",err="",busy=false;
 var PHASES=["Antes","Durante","Depois"];
+var PDF_URL="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
 
-function openDb(){return new Promise(function(res,rej){var q=indexedDB.open("bram-relatorios",1);q.onupgradeneeded=function(){q.result.createObjectStore("kv")};q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})}
-function dbGet(){return openDb().then(function(d){return new Promise(function(res){var r=d.transaction("kv").objectStore("kv").get("state");r.onsuccess=function(){res(r.result)};r.onerror=function(){res(null)}})}).catch(function(){return null})}
-function dbSet(v){return openDb().then(function(d){return new Promise(function(res){var t=d.transaction("kv","readwrite");t.objectStore("kv").put(v,"state");t.oncomplete=res;t.onerror=res})}).catch(function(){})}
-function persist(){return dbSet(S)}
+var dbp=null;
+function openDb(){
+  if(dbp){return dbp}
+  dbp=new Promise(function(res,rej){
+    var q=indexedDB.open("bram-relatorios",2);
+    q.onupgradeneeded=function(){
+      var d=q.result;
+      if(!d.objectStoreNames.contains("kv")){d.createObjectStore("kv")}
+      if(!d.objectStoreNames.contains("img")){d.createObjectStore("img")}
+    };
+    q.onsuccess=function(){res(q.result)};
+    q.onerror=function(){rej(q.error)};
+  });
+  return dbp;
+}
+function dbGet(store,key){
+  return openDb().then(function(d){return new Promise(function(res){
+    var r=d.transaction(store).objectStore(store).get(key);
+    r.onsuccess=function(){res(r.result)};
+    r.onerror=function(){res(null)};
+  })}).catch(function(){return null});
+}
+function dbPut(store,key,val){
+  return openDb().then(function(d){return new Promise(function(res){
+    var t=d.transaction(store,"readwrite");t.objectStore(store).put(val,key);
+    t.oncomplete=res;t.onerror=res;
+  })}).catch(function(){});
+}
+function dbDel(store,key){
+  return openDb().then(function(d){return new Promise(function(res){
+    var t=d.transaction(store,"readwrite");t.objectStore(store).delete(key);
+    t.oncomplete=res;t.onerror=res;
+  })}).catch(function(){});
+}
+function persist(){return dbPut("kv","state",S)}
+
+var imgCache={};
+function getImg(id){
+  if(imgCache[id]){return Promise.resolve(imgCache[id])}
+  return dbGet("img",id).then(function(rec){if(rec){imgCache[id]=rec}return rec});
+}
+
+var pdfLib=null;
+function loadPdfLib(){
+  if(window.jspdf&&window.jspdf.jsPDF){return Promise.resolve()}
+  if(pdfLib){return pdfLib}
+  pdfLib=new Promise(function(res,rej){
+    var s=document.createElement("script");
+    s.src=PDF_URL;s.onload=res;
+    s.onerror=function(){pdfLib=null;rej(new Error("pdf"))};
+    document.head.appendChild(s);
+  });
+  return pdfLib;
+}
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function cur(){for(var i=0;i<S.reports.length;i++){if(S.reports[i].id===sel){return S.reports[i]}}return null}
@@ -98,6 +152,14 @@ function headerForm(r,isNew){
   return h;
 }
 
+function hydrate(){
+  document.querySelectorAll("img[data-pid]").forEach(function(im){
+    getImg(im.getAttribute("data-pid")).then(function(rec){
+      if(rec&&im.isConnected){im.src=rec.thumb}
+    });
+  });
+}
+
 function renderMain(){
   var el=document.getElementById("main"),r=cur(),h="";
   if(mode==="newReport"){
@@ -116,13 +178,13 @@ function renderMain(){
   h+='<div class="card">';
   if(msg){h+='<div class="ok">'+esc(msg)+'</div>'}
   h+='<div class="row"><div><p style="font-size:20px;font-weight:600;margin:0">'+esc(r.title)+'</p><p class="lbl">'+esc(r.vessel)+' · '+esc(r.turma)+' · '+esc(r.setor)+'</p></div>';
-  h+='<div class="btns"><button data-act="edit">Editar</button><button class="pri" data-act="pdf">Exportar PDF</button></div></div>';
+  h+='<div class="btns"><button data-act="edit">Editar</button><button class="pri" data-act="pdf"'+(busy?' disabled':'')+'>'+(busy?'Gerando…':'Exportar PDF')+'</button></div></div>';
   h+='<div class="grid2"><div><p class="lbl">CMT | CFM</p><p class="val">'+esc(r.cmt||"-")+'</p></div><div><p class="lbl">Período</p><p class="val">'+esc(r.periodo||"-")+'</p></div></div>';
   h+='<p class="lbl">Colaboradores</p><div>'+(r.colaboradores.length?r.colaboradores.map(function(c){return '<span class="chip">'+esc(c)+'</span>'}).join(""):'<span class="lbl">Nenhum colaborador informado.</span>')+'</div>';
   h+='<div class="hr"></div>';
   if(mode==="addPhoto"&&pending){
     h+='<p style="font-size:16px;font-weight:600;margin:0 0 4px">Nova foto</p>';
-    h+='<div class="ph"><img alt="Foto nova" src="'+pending.data+'"></div>';
+    h+='<div class="ph"><img alt="Foto nova" src="'+pending.thumb+'"></div>';
     var last=r.pages.length?r.pages[r.pages.length-1]:{task:"",phase:"Antes"};
     h+='<label>Descrição da tarefa</label><input id="p-task" value="'+esc(last.task)+'" placeholder="Shock Fast das bases do ME#1 - base 1BB">';
     if(err){h+='<p class="err">'+esc(err)+'</p>'}
@@ -133,13 +195,14 @@ function renderMain(){
   }else{
     if(pg>=r.pages.length){pg=r.pages.length-1}
     var p=r.pages[pg];
-    h+='<div class="ph"><img alt="'+esc(p.task)+'" src="'+p.img+'"></div>';
+    h+='<div class="ph"><img alt="'+esc(p.task)+'" data-pid="'+p.id+'"></div>';
     h+='<div class="row" style="margin-top:12px"><div><p style="font-weight:600;margin:0">'+esc(p.task)+'</p><p class="lbl">Página '+(pg+1)+' de '+r.pages.length+'</p></div><span class="badge b-'+p.phase+'">'+p.phase+'</span></div>';
     h+='<div class="row" style="margin-top:12px"><button data-act="prev" aria-label="Página anterior">&larr;</button><div class="btns"><button class="pri" data-act="photo">Adicionar foto</button><button class="dng" data-act="del-page">Excluir página</button></div><button data-act="next" aria-label="Próxima página">&rarr;</button></div>';
   }
   h+='<div class="hr"></div><button class="dng" data-act="del-report">Excluir relatório</button>';
   h+='</div>';
   el.innerHTML=h;
+  hydrate();
 }
 
 function render(){
@@ -147,30 +210,30 @@ function render(){
   renderSide();renderMain();
 }
 
+function toJpeg(im,maxW,q){
+  var w=im.width,h=im.height;
+  if(w>maxW){h=Math.round(h*maxW/w);w=maxW}
+  var c=document.createElement("canvas");c.width=w;c.height=h;
+  c.getContext("2d").drawImage(im,0,0,w,h);
+  return {data:c.toDataURL("image/jpeg",q),w:w,h:h};
+}
 function compress(file){
   return new Promise(function(res,rej){
-    var fr=new FileReader();
-    fr.onload=function(){
-      var im=new Image();
-      im.onload=function(){
-        var w=im.width,h=im.height,m=1100;
-        if(w>m){h=Math.round(h*m/w);w=m}
-        var c=document.createElement("canvas");c.width=w;c.height=h;
-        c.getContext("2d").drawImage(im,0,0,w,h);
-        res({data:c.toDataURL("image/jpeg",0.75),w:w,h:h});
-      };
-      im.onerror=rej;im.src=fr.result;
+    var url=URL.createObjectURL(file),im=new Image();
+    im.onload=function(){
+      var full=toJpeg(im,1100,0.75),th=toJpeg(im,720,0.7);
+      URL.revokeObjectURL(url);
+      res({full:full.data,thumb:th.data,w:full.w,h:full.h});
     };
-    fr.onerror=rej;fr.readAsDataURL(file);
+    im.onerror=function(){URL.revokeObjectURL(url);rej()};
+    im.src=url;
   });
 }
 
 function val(id){return document.getElementById(id).value.trim()}
 
-function makePdf(r){
-  var J=window.jspdf&&window.jspdf.jsPDF;
-  if(!J){err="";msg="";alert("A biblioteca de PDF não carregou. Verifique a conexão e tente de novo.");return false}
-  var d=new J({orientation:"landscape",unit:"pt",format:[780,540]});
+function makePdf(r,fulls){
+  var d=new window.jspdf.jsPDF({orientation:"landscape",unit:"pt",format:[780,540]});
   function bars(){
     d.setFillColor(255,106,0);d.rect(762,0,18,125,"F");
     d.setFillColor(63,90,140);d.rect(762,125,18,415,"F");
@@ -200,7 +263,8 @@ function makePdf(r){
     d.text(lines,70,y);y+=lines.length*16+6;
   });
   var LBL={Antes:"ANTES DA ATIVIDADE",Durante:"DURANTE A ATIVIDADE",Depois:"DEPOIS DA ATIVIDADE"};
-  r.pages.forEach(function(p){
+  r.pages.forEach(function(p,i){
+    var rec=fulls[i];
     d.addPage();bars();
     d.setFont("helvetica","normal");d.setFontSize(30);d.setTextColor(68,114,196);d.text("REGISTRO FOTOGRÁFICO",50,52);
     d.setDrawColor(68,114,196);d.setLineWidth(1.5);d.line(50,64,740,64);
@@ -208,15 +272,28 @@ function makePdf(r){
     d.setFont("helvetica","bold");d.setFontSize(12);d.setTextColor(31,47,79);
     var tl=d.splitTextToSize(p.task.toUpperCase(),500).slice(0,2);
     d.text(tl,380,tl.length>1?93:101,{align:"center"});
-    var bw=600,bh=330,sc=Math.min(bw/p.w,bh/p.h),iw=p.w*sc,ih=p.h*sc,ix=380-iw/2,iy=125+(bh-ih)/2;
-    d.addImage(p.img,"JPEG",ix,iy,iw,ih);
-    d.setDrawColor(68,114,196);d.rect(ix,iy,iw,ih);
+    if(rec){
+      var bw=600,bh=330,sc=Math.min(bw/p.w,bh/p.h),iw=p.w*sc,ih=p.h*sc,ix=380-iw/2,iy=125+(bh-ih)/2;
+      d.addImage(rec.full,"JPEG",ix,iy,iw,ih);
+      d.setDrawColor(68,114,196);d.rect(ix,iy,iw,ih);
+    }
     d.rect(280,470,200,30);
     d.setFont("helvetica","bold");d.setFontSize(12);d.setTextColor(31,47,79);d.text(LBL[p.phase]||p.phase,380,490,{align:"center"});
   });
   var name="Relatorio_"+slug(r.title)+".pdf";
   d.save(name);
   return name;
+}
+
+function exportPdf(r){
+  busy=true;msg="";render();
+  Promise.all([loadPdfLib(),Promise.all(r.pages.map(function(p){return getImg(p.id)}))]).then(function(a){
+    var n=makePdf(r,a[1]);
+    busy=false;msg="PDF gerado: "+n;render();
+  }).catch(function(){
+    busy=false;render();
+    alert("Não foi possível gerar o PDF. Se for a primeira vez, conecte à internet para carregar o gerador e tente de novo.");
+  });
 }
 
 document.addEventListener("click",function(e){
@@ -235,10 +312,7 @@ document.addEventListener("click",function(e){
     else{for(var k in o){r[k]=o[k]}msg="Cabeçalho salvo"}
     mode="view";err="";persist();
   }
-  else if(a==="pdf"){
-    var n=makePdf(r);
-    if(n){msg="PDF gerado: "+n}
-  }
+  else if(a==="pdf"){if(busy){return}exportPdf(r);return}
   else if(a==="prev"){pg=(pg-1+r.pages.length)%r.pages.length;msg=""}
   else if(a==="next"){pg=(pg+1)%r.pages.length;msg=""}
   else if(a==="photo"){document.getElementById("file").click();return}
@@ -246,15 +320,23 @@ document.addEventListener("click",function(e){
   else if(a==="save-photo"){
     var task=val("p-task");
     if(!task){err="Descreva a tarefa desta foto.";render();return}
-    r.pages.push({id:uid(),task:task,phase:document.getElementById("p-phase").value,img:pending.data,w:pending.w,h:pending.h});
-    pg=r.pages.length-1;pending=null;mode="view";err="";msg="Foto salva";persist();
+    var id=uid();
+    var page={id:id,task:task,phase:document.getElementById("p-phase").value,w:pending.w,h:pending.h};
+    var rec={full:pending.full,thumb:pending.thumb};
+    imgCache[id]=rec;
+    r.pages.push(page);
+    pg=r.pages.length-1;pending=null;mode="view";err="";msg="Foto salva";
+    dbPut("img",id,rec).then(persist);
   }
   else if(a==="del-page"){
     if(!confirm("Excluir esta página do relatório?")){return}
-    r.pages.splice(pg,1);if(pg>0){pg--}msg="";persist();
+    var gone=r.pages.splice(pg,1)[0];
+    delete imgCache[gone.id];dbDel("img",gone.id);
+    if(pg>0){pg--}msg="";persist();
   }
   else if(a==="del-report"){
     if(!confirm("Excluir o relatório inteiro? Essa ação não pode ser desfeita.")){return}
+    r.pages.forEach(function(p){delete imgCache[p.id];dbDel("img",p.id)});
     S.reports=S.reports.filter(function(x){return x.id!==sel});sel=null;mode="view";msg="";persist();
   }
   render();
@@ -266,11 +348,33 @@ document.getElementById("file").addEventListener("change",function(ev){
   ev.target.value="";
 });
 
-dbGet().then(function(v){
+function migrate(){
+  var jobs=[];
+  S.reports.forEach(function(r){
+    r.pages.forEach(function(p){
+      if(p.img){
+        var data=p.img;delete p.img;
+        jobs.push(dbPut("img",p.id,{full:data,thumb:data}));
+      }
+    });
+  });
+  if(jobs.length){return Promise.all(jobs).then(persist)}
+  return Promise.resolve();
+}
+
+dbGet("kv","state").then(function(v){
   if(v&&v.reports){S=v}
+  return migrate();
+}).then(function(){
   if(S.reports.length&&window.matchMedia("(min-width:800px)").matches){sel=S.reports[0].id}
   render();
+  var idle=window.requestIdleCallback||function(f){setTimeout(f,3000)};
+  idle(function(){loadPdfLib().catch(function(){})});
 });
+
+if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol)){
+  window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})});
+}
 </script>
 </body>
 </html>
