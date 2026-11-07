@@ -756,7 +756,8 @@ function compressImage(file){
 
 // ---------- PDF generation ----------
 
-async function buildPDFDoc(reportId){
+async function buildPDFDoc(reportId, opts){
+  const onlyTask = opts && opts.onlyTask !== undefined ? opts.onlyTask : null;
   const header = state.currentHeader;
   const entries = state.currentEntries;
   if(entries.length === 0){ showToast('Adicione ao menos uma foto antes de gerar o relatório.'); return; }
@@ -926,7 +927,9 @@ async function buildPDFDoc(reportId){
     return chunks;
   }
 
+  const firstTaskPage = doc.getNumberOfPages() + 1;
   for(const task of taskOrder){
+    if(onlyTask !== null && task !== onlyTask) continue;
     const taskEntries = byTask[task];
 
     // Standalone text page: its own dedicated page, styled like the rest of the report.
@@ -978,19 +981,29 @@ async function buildPDFDoc(reportId){
       // for long ones (which then wrap to more than one line).
       doc.setFont('helvetica','bold'); doc.setFontSize(13);
       const taskText = task || '(sem título)';
-      const maxBoxW = PW - 100;
+      // Caixa ocupa a largura toda da página (mesmas margens da linha do título) e o texto quebra dentro dela.
+      const boxW = PW - 100;
       const boxPadH = 24;
-      const maxTaskTextW = maxBoxW - boxPadH;
-      const singleLineW = doc.getTextWidth(taskText);
-      let taskLines, boxW;
-      if(singleLineW <= maxTaskTextW){
-        taskLines = [taskText];
-        boxW = Math.max(120, singleLineW + boxPadH);
-      } else {
-        taskLines = doc.splitTextToSize(taskText, maxTaskTextW);
-        boxW = maxBoxW;
-      }
-      const boxX = (PW - boxW) / 2;
+      const maxTaskTextW = boxW - boxPadH;
+      const taskLines = [];
+      String(taskText).split('\n').forEach(par=>{
+        let cur = '';
+        const push = ()=>{ taskLines.push(cur); cur = ''; };
+        par.split(/\s+/).filter(Boolean).forEach(word=>{
+          let w = word;
+          while(doc.getTextWidth(w) > maxTaskTextW){ // palavra maior que a caixa: quebra por letras
+            let k = w.length;
+            while(k > 1 && doc.getTextWidth(w.slice(0,k)) > maxTaskTextW) k--;
+            if(cur){ push(); }
+            taskLines.push(w.slice(0,k)); w = w.slice(k);
+          }
+          const t = cur ? cur + ' ' + w : w;
+          if(doc.getTextWidth(t) <= maxTaskTextW) cur = t; else { push(); cur = w; }
+        });
+        if(cur || !par) push();
+      });
+      if(!taskLines.length) taskLines.push('');
+      const boxX = 40;
       const taskLineH = 16;
       const boxPadV = 14;
       const boxH = taskLines.length*taskLineH + boxPadV*2;
@@ -998,7 +1011,7 @@ async function buildPDFDoc(reportId){
       doc.rect(boxX, 78, boxW, boxH);
       doc.setTextColor(20,20,20);
       const taskTextY = 78 + boxPadV + taskLineH*0.72;
-      doc.text(taskLines, PW/2, taskTextY, {align:'center'});
+      doc.text(taskLines, boxX + boxW/2, taskTextY, {align:'center'});
 
       const areaTop = 78 + boxH + 8;
       const areaBottom = PH - 20;
@@ -1102,12 +1115,17 @@ async function buildPDFDoc(reportId){
     }
   }
 
-  const fname = `Relatorio_${slugify(header.embarcacao)}_${slugify(header.turma)}.pdf`;
+  let fname = `Relatorio_${slugify(header.embarcacao)}_${slugify(header.turma)}.pdf`;
+  if(onlyTask !== null){
+    // remove capa e lista de atividades: fica só o que pertence à tarefa
+    for(let i = firstTaskPage - 1; i >= 1; i--) doc.deletePage(i);
+    fname = `Tarefa_${slugify(onlyTask).slice(0,40)}_${slugify(header.turma)}.pdf`;
+  }
   return {doc, fname};
 }
 
-async function showPdfPreview(reportId){
-  const result = await buildPDFDoc(reportId);
+async function showPdfPreview(reportId, opts){
+  const result = await buildPDFDoc(reportId, opts);
   if(!result) return;
   const { doc, fname } = result;
   const blobUrl = doc.output('bloburl');
@@ -1118,7 +1136,7 @@ async function showPdfPreview(reportId){
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,14,24,.92);z-index:200;display:flex;flex-direction:column;';
   overlay.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--navy);color:#fff;flex:none;">
-      <div style="font-weight:700;font-size:15px;">Pré-visualização do relatório</div>
+      <div style="font-weight:700;font-size:15px;">${opts && opts.onlyTask !== undefined && opts.onlyTask !== null ? 'Páginas desta tarefa no PDF' : 'Pré-visualização do relatório'}</div>
       <button id="pdf-preview-close" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;line-height:1;">✕</button>
     </div>
     <iframe src="${blobUrl}" style="flex:1;border:none;width:100%;background:#525659;"></iframe>
@@ -2045,6 +2063,7 @@ function renderReportBody(){
           <span style="flex:none;background:var(--border);color:var(--muted);font-size:11px;font-weight:700;border-radius:20px;padding:2px 8px;">${byTask[task].length}</span>
         </span>
         <span style="flex:none;">
+          <button class="btn-sm btn-ghost preview-task-pdf" data-task="${encodeURIComponent(task)}" title="Ver como ficam as páginas desta tarefa no PDF" style="padding:4px 9px;margin-left:4px;">👁 PDF</button>
           <button class="btn-sm btn-ghost rename-task" data-task="${encodeURIComponent(task)}" style="padding:4px 9px;margin-left:4px;">✎</button>
           <button class="btn-sm btn-ghost move-task-report" data-task="${encodeURIComponent(task)}" style="padding:4px 9px;margin-left:4px;">⇢ relatório</button>
         </span>
@@ -2084,6 +2103,17 @@ function renderReportBody(){
     };
   });
 
+  main.querySelectorAll('.preview-task-pdf').forEach(btn=>{
+    btn.onclick = async (e)=>{
+      e.stopPropagation();
+      const task = decodeURIComponent(btn.getAttribute('data-task'));
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span>'; btn.disabled = true;
+      try{ await showPdfPreview(state.currentReportId, {onlyTask: task}); }
+      catch(err){ console.error(err); showToast('Erro ao gerar PDF.'); }
+      btn.innerHTML = orig; btn.disabled = false;
+    };
+  });
   main.querySelectorAll('.move-task-report').forEach(btn=>{
     btn.onclick = ()=>{
       const task = decodeURIComponent(btn.getAttribute('data-task'));
