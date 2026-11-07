@@ -2252,6 +2252,9 @@ function renderAdd(){
     photoList.innerHTML = state.pendingPhotos.map((p, i)=>`
       <div style="position:relative;background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:8px;">
         <img src="${p.dataUrl}" style="display:block;width:100%;max-height:min(55vh,360px);object-fit:contain;background:#eef1f6;border-radius:7px;">
+        <div style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:6px;">
+          <span style="background:rgba(31,56,100,.9);color:#fff;font-size:13px;font-weight:700;border-radius:999px;padding:6px 11px;">${i+1}/${state.pendingPhotos.length}</span>
+        </div>
         <button class="photo-remove" data-idx="${i}" title="Remover foto" style="position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.92);border:1px solid var(--border);color:var(--danger);font-size:16px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2);">✕</button>
         <div style="margin-top:8px;">
           <div class="phase-choice">
@@ -2278,6 +2281,74 @@ function renderAdd(){
         state.pendingPhotos[idx].phaseText = inp.value;
       };
     });
+    // ----- arrastar para reordenar (segurar a foto e arrastar; no celular, segurar ~0,3 s) -----
+    const cards = Array.from(photoList.children);
+    cards.forEach((card, idx)=>{
+      card.style.cursor = 'grab';
+      card.style.userSelect = 'none'; card.style.webkitUserSelect = 'none'; card.style.webkitTouchCallout = 'none';
+      card.addEventListener('contextmenu', e=> e.preventDefault());
+      const img = card.querySelector('img'); if(img){ img.draggable = false; }
+      let st = null, timer = null;
+      const begin = ()=>{
+        if(!st || st.on) return;
+        st.on = true; window.__dragPhoto = true;
+        try{ card.setPointerCapture(st.id); }catch(e){}
+        card.style.zIndex = 50; card.style.opacity = '.92'; card.style.cursor = 'grabbing';
+        card.style.boxShadow = '0 10px 28px rgba(0,0,0,.35)'; card.style.transition = 'none';
+        if(navigator.vibrate){ try{ navigator.vibrate(15); }catch(e){} }
+      };
+      const targetAt = (x, y)=>{
+        for(let j=0;j<cards.length;j++){
+          if(j===idx) continue;
+          const r = cards[j].getBoundingClientRect();
+          if(x>=r.left && x<=r.right && y>=r.top && y<=r.bottom) return j;
+        }
+        return -1;
+      };
+      const finish = (commit, x, y)=>{
+        clearTimeout(timer);
+        if(!st) return;
+        const was = st.on; st = null; window.__dragPhoto = false;
+        cards.forEach(c=>{ c.style.outline = ''; });
+        if(!was) return;
+        const to = commit ? targetAt(x, y) : -1;
+        if(to >= 0){
+          const [item] = state.pendingPhotos.splice(idx, 1);
+          state.pendingPhotos.splice(to, 0, item);
+        }
+        renderPhotoList();
+      };
+      card.addEventListener('pointerdown', e=>{
+        if(e.target.closest('button,input,select,textarea')) return;
+        if(e.pointerType==='mouse' && e.button!==0) return;
+        if(state.pendingPhotos.length < 2) return;
+        st = {id:e.pointerId, x:e.clientX, y:e.clientY, sy:window.scrollY, on:false, touch:e.pointerType!=='mouse'};
+        if(st.touch) timer = setTimeout(begin, 300);
+      });
+      card.addEventListener('pointermove', e=>{
+        if(!st) return;
+        const dx = e.clientX - st.x, dy = e.clientY - st.y;
+        if(!st.on){
+          const d = Math.hypot(dx, dy);
+          if(st.touch){ if(d > 10){ clearTimeout(timer); st = null; } }
+          else if(d > 5){ begin(); }
+          if(!st || !st.on) return;
+        }
+        e.preventDefault();
+        card.style.transform = `translate(${dx}px, ${dy + (window.scrollY - st.sy)}px)`;
+        const t = targetAt(e.clientX, e.clientY);
+        cards.forEach((c, j)=>{ c.style.outline = (j===t) ? '3px solid var(--blue)' : ''; });
+        if(e.clientY < 70) window.scrollBy(0, -14);
+        else if(e.clientY > window.innerHeight - 70) window.scrollBy(0, 14);
+      });
+      card.addEventListener('pointerup', e=> finish(true, e.clientX, e.clientY));
+      card.addEventListener('pointercancel', ()=> finish(false));
+    });
+    if(!window.__dragPhotoTouchGuard){
+      window.__dragPhotoTouchGuard = true;
+      document.addEventListener('touchmove', e=>{ if(window.__dragPhoto) e.preventDefault(); }, {passive:false});
+    }
+
     photoList.querySelectorAll('.photo-remove').forEach(btn=>{
       btn.onclick = ()=>{
         const idx = Number(btn.getAttribute('data-idx'));
