@@ -1131,12 +1131,60 @@ async function buildPDFDoc(reportId, opts){
   return {doc, fname};
 }
 
+// No celular o navegador só mostra a 1ª página de um PDF dentro de iframe.
+// Aqui as páginas são desenhadas uma a uma (pdf.js) numa lista que rola.
+const PDFJS_VER = '3.11.174';
+let pdfjsPromise = null;
+function loadPdfJs(){
+  if(pdfjsPromise) return pdfjsPromise;
+  pdfjsPromise = new Promise((resolve, reject)=>{
+    const base = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VER}/`;
+    const sc = document.createElement('script');
+    sc.src = base + 'pdf.min.js';
+    sc.onload = async ()=>{
+      try{
+        const lib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib;
+        try{
+          const code = await (await fetch(base + 'pdf.worker.min.js')).text();
+          lib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([code], {type:'text/javascript'}));
+        }catch(e){ lib.GlobalWorkerOptions.workerSrc = base + 'pdf.worker.min.js'; }
+        resolve(lib);
+      }catch(e){ reject(e); }
+    };
+    sc.onerror = ()=> reject(new Error('pdf.js não carregou'));
+    document.head.appendChild(sc);
+  });
+  pdfjsPromise.catch(()=>{ pdfjsPromise = null; });
+  return pdfjsPromise;
+}
+async function renderPdfPagesInto(container, doc){
+  const lib = await loadPdfJs();
+  const data = doc.output('arraybuffer');
+  const pdf = await lib.getDocument({data}).promise;
+  container.innerHTML = '';
+  const cssW = Math.max(240, container.clientWidth - 20);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  for(let i = 1; i <= pdf.numPages; i++){
+    if(!document.body.contains(container)) return;
+    const page = await pdf.getPage(i);
+    const base = page.getViewport({scale:1});
+    const scale = (cssW / base.width) * dpr;
+    const vp = page.getViewport({scale});
+    const cv = document.createElement('canvas');
+    cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
+    cv.style.cssText = `display:block;width:${cssW}px;height:${Math.floor(cssW * base.height / base.width)}px;margin:0 auto 10px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.45);`;
+    container.appendChild(cv);
+    await page.render({canvasContext: cv.getContext('2d'), viewport: vp}).promise;
+  }
+}
+
 async function showPdfPreview(reportId, opts){
   const result = await buildPDFDoc(reportId, opts);
   if(!result) return;
   const { doc, fname } = result;
   const blobUrl = doc.output('bloburl');
   state.pdfPreview = { doc, fname, blobUrl };
+  const useCanvas = window.matchMedia('(max-width: 900px), (pointer: coarse)').matches;
 
   const overlay = document.createElement('div');
   overlay.id = 'pdf-preview-overlay';
@@ -1146,7 +1194,9 @@ async function showPdfPreview(reportId, opts){
       <div style="font-weight:700;font-size:15px;">${opts && opts.onlyTask !== undefined && opts.onlyTask !== null ? 'Páginas desta tarefa no PDF' : 'Pré-visualização do relatório'}</div>
       <button id="pdf-preview-close" style="background:none;border:none;color:#fff;font-size:24px;cursor:pointer;line-height:1;">✕</button>
     </div>
-    <iframe src="${blobUrl}" style="flex:1;border:none;width:100%;background:#525659;"></iframe>
+    ${useCanvas
+      ? `<div id="pdf-pages" style="flex:1;overflow:auto;-webkit-overflow-scrolling:touch;background:#525659;padding:10px;color:#fff;font-size:14px;text-align:center;"><div style="padding:40px 10px;"><span class="spinner"></span><div style="margin-top:12px;">Carregando páginas...</div></div></div>`
+      : `<iframe src="${blobUrl}" style="flex:1;border:none;width:100%;background:#525659;"></iframe>`}
     <div style="padding:14px 18px;background:var(--bg);display:flex;gap:10px;flex:none;">
       <button class="btn btn-ghost" id="pdf-preview-close-2" style="flex:1;">Fechar</button>
       <button class="btn btn-primary" id="pdf-preview-download" style="flex:1.4;">⬇ Baixar PDF</button>
@@ -1159,6 +1209,13 @@ async function showPdfPreview(reportId, opts){
     if(state.pdfPreview && state.pdfPreview.blobUrl) URL.revokeObjectURL(state.pdfPreview.blobUrl);
     state.pdfPreview = null;
   };
+  if(useCanvas){
+    const holder = document.getElementById('pdf-pages');
+    renderPdfPagesInto(holder, doc).catch(err=>{
+      console.error(err);
+      holder.innerHTML = '<div style="padding:40px 14px;">Não foi possível mostrar as páginas aqui.<br>Use <b>⬇ Baixar PDF</b> para ver o arquivo completo.</div>';
+    });
+  }
   document.getElementById('pdf-preview-close').onclick = close;
   document.getElementById('pdf-preview-close-2').onclick = close;
   document.getElementById('pdf-preview-download').onclick = ()=>{
