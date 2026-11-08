@@ -2407,8 +2407,10 @@ function renderAdd(){
         if(!was) return;
         const to = commit ? targetAt(x, y) : -1;
         if(to >= 0){
-          const [item] = state.pendingPhotos.splice(idx, 1);
-          state.pendingPhotos.splice(to, 0, item);
+          // troca só as duas fotos de lugar; as outras não se mexem
+          const tmp = state.pendingPhotos[idx];
+          state.pendingPhotos[idx] = state.pendingPhotos[to];
+          state.pendingPhotos[to] = tmp;
         }
         renderPhotoList();
       };
