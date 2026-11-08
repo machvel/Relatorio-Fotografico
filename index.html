@@ -764,6 +764,13 @@ async function buildPDFDoc(reportId, opts){
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'landscape', unit:'pt', format:[780,540]});
+  // Textos digitados em Mac/iPhone podem vir com acento "solto" (NFD: c + ¸). O jsPDF não sabe
+  // medir isso e espalha as letras. Normaliza tudo para NFC (ç, ã, é como caractere único).
+  const nfc = v => Array.isArray(v) ? v.map(nfc) : (typeof v === 'string' ? v.normalize('NFC') : v);
+  ['text','getTextWidth','splitTextToSize'].forEach(fn=>{
+    const orig = doc[fn].bind(doc);
+    doc[fn] = (t, ...rest)=> orig(nfc(t), ...rest);
+  });
   const PW = 780, PH = 540;
   const navy = [31,56,100], blue = [68,114,196], orange=[237,125,49], muted=[91,100,114];
   const sidebarNavy = [61,81,133], sidebarOrange = [255,102,0];
