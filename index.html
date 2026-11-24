@@ -2755,6 +2755,35 @@ window.matchMedia('(min-width: 900px)').addEventListener('change', ()=>{
 });
 
 // ---------- Init ----------
+// ---------- Vigia de acesso: bloqueia na hora se o acesso for revogado, mesmo com o app aberto ----------
+let accessWatchBusy = false;
+async function watchAccess(){
+  if(accessWatchBusy) return;
+  if(new URLSearchParams(window.location.search).get('admin') === '1') return;
+  const reqId = localStorage.getItem('accessRequestId');
+  if(!reqId) return;
+  if(['access-request','access-pending','access-denied','admin-login','admin-access'].includes(state.screen)) return;
+  accessWatchBusy = true;
+  try{
+    const reqDoc = await getAccessRequest(reqId);
+    if(!reqDoc || reqDoc.status !== 'approved'){
+      localStorage.removeItem('accessApproved');
+      const ov = document.getElementById('pdf-preview-overlay'); if(ov) ov.remove();
+      try{ if(state.textPanelOpen) closeTextPanel(); }catch(e){}
+      document.body.classList.remove('has-task');
+      const sl = document.getElementById('side-list'); if(sl) sl.innerHTML = '';
+      state.screen = (reqDoc && reqDoc.status === 'denied') ? 'access-denied' : 'access-pending';
+      render();
+    }
+  }catch(e){
+    // sem internet: mantém o último estado; confere de novo quando a conexão voltar
+  }finally{ accessWatchBusy = false; }
+}
+setInterval(watchAccess, 15000);
+window.addEventListener('online', watchAccess);
+window.addEventListener('focus', watchAccess);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) watchAccess(); });
+
 async function init(){
   const isAdmin = new URLSearchParams(window.location.search).get('admin') === '1';
   if(isAdmin){
